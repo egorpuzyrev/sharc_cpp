@@ -114,7 +114,9 @@ Counts<std::string> get_keys_by_lcp(std::string text, size_t factor, size_t min_
     start = std::chrono::system_clock::now();
     for(auto& prefix: common_prefixes) {
         l = prefix.length();
-        for(size_t i=min_len; i<=l&&i<=max_len; i++) {
+        size_t lim = std::min(l, max_len);
+        //#pragma omp parallel for
+        for(size_t i=min_len; i<=lim; i++) {
             sub = prefix.substr(0, i);
 
             //keys[sub] = 0;

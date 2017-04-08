@@ -17,52 +17,38 @@
 //Counts<std::string> multicount(std::string text, std::vector<std::string> patterns);
 template<class CustomIterator>
 Counts<std::string> multicount(std::string text, CustomIterator first, CustomIterator last) {
-    //std::vector<size_t> hashes;
-    //hashes.reserve(patterns.size());
+
     size_t l=text.length();
     Counts<std::string> counts;
-    std::map<std::string, size_t> hashes;
-    std::map<size_t, std::string> rhashes;
-    size_t h;
+    std::unordered_set<std::string> hashes_set;
 
-    std::map<size_t, size_t> cur_hashes;
+    std::unordered_set<size_t> patterns_lens_set;
 
-    //for(auto& i: patterns) {
-    //for(auto& i=patterns_begin; i!=patterns_end; i++) {
     CustomIterator it=first;
-    while(it!=last) {
+    //#pragma parallel
+//    while(it!=last) {
+    for(;it!=last; it++) {
         auto i = (*it);
+        hashes_set.emplace((*it));
+        patterns_lens_set.emplace((*it).length());
         counts[i] = 0;
-        h = fasthash(i, BASE);
-        hashes[i] = h;
-        rhashes[h] = i;
-        cur_hashes[i.length()] = 0;
-        ++it;
+//        ++it;
     }
 
     std::vector<size_t> patterns_lens;
-    for(auto& i: cur_hashes) {
-        patterns_lens.push_back(i.first);
+    for(auto& i: patterns_lens_set) {
+        patterns_lens.push_back(i);
     }
 
     std::sort(patterns_lens.begin(), patterns_lens.end());
 
     std::string sub;
-    size_t cur_hash;
+    //#pragma parallel for
     for(size_t i=0; i<l; i++) {
-        for(auto& j: patterns_lens) {
-//        for(size_t j=1; j<=patterns_lens[patterns_lens.size()-1]; j++) {
-            if(l-i>=j) {
-                sub = text.substr(i, j);
-//                if(j==sub.length()) {
-                //cur_hash = fasthash(sub, BASE);
-                //j.second = cur_hash;
-                //if(rhashes.count(cur_hash)) {
-                if(hashes.count(sub)) {
-                    //if(sub==rhashes[cur_hash]) {
-                        counts[sub] += 1;
-                    //}
-                }
+        for(const auto& j: patterns_lens) {
+            sub = text.substr(i, j);
+            if(hashes_set.count(sub)) {
+                    counts[sub] += 1;
             }
         }
     }

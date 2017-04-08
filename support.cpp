@@ -130,13 +130,14 @@ std::vector<std::string> get_keys_intersections(std::string key1, std::string ke
 
     size_t l = key1.size();
     std::string sub;
+//    #pragma omp parallel for
     for(size_t i=1; i<l; i++) {
         sub = key1.substr(0, i);
         if(boost::algorithm::ends_with(key2, sub)) {
             intersections.push_back(key2+key1.substr(i, l));
         }
     }
-
+//    #pragma omp parallel for
     for(size_t i=1; i<l; i++) {
         sub = key1.substr(l-i, i);
         if(boost::algorithm::starts_with(key2, sub)) {

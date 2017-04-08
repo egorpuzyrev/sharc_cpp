@@ -62,8 +62,8 @@ std::string compress(std::string text, size_t block_size) {
 
     /// calculation of keys_stack
     std::cout<<">>>get_keys_naive()"<<std::endl;
-    Counts<std::string> keys = get_keys_naive(text, 2, 1, 1);
-//    Counts<std::string> keys = get_keys_by_lcp(text, 2, 1, 1);
+//    Counts<std::string> keys = get_keys_naive(text, 2, 1, 1);
+    Counts<std::string> keys = get_keys_by_lcp(text, 2, 1, block_size, block_size);
     Counts<std::string> keys_copy(keys.begin(), keys.end());
     std::cout<<">>>calculation of keys_stack"<<std::endl;
     while(keys.size()) {
@@ -92,6 +92,7 @@ std::string compress(std::string text, size_t block_size) {
         std::vector<std::string> new_intersections;
         n = 0;
         //bool t1, t2;
+        //#pragma omp parallel
         for(auto& i: keys) {
             key2 = i.first;
             new_intersections = get_keys_intersections(key, key2);

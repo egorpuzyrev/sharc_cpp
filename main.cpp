@@ -30,41 +30,41 @@ int main() {
                  std::istreambuf_iterator<char>());
 
     //std::string text = SampleString;
-    std::string text = SampleString.substr(0, 128*1024);
+    std::string text = SampleString.substr(0, 100*1024);
     //std::string text = base64_encode(SampleString.substr(0, 64*1024));
     std::cout<<"Text size: "<<text.size()<<std::endl;
 
     auto start = std::chrono::system_clock::now();
-    auto keys_naive = get_keys_naive(text, 2, 2, 32);
+//    auto keys_naive = get_keys_naive(text, 2, 2, 32);
     auto finish = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
     std::cout << "Get keys naive: " << elapsed.count() << std::endl;
-    std::cout << "keys_naive size: " << keys_naive.size() << std::endl << std::endl;
+//    std::cout << "keys_naive size: " << keys_naive.size() << std::endl << std::endl;
 
-    start = std::chrono::system_clock::now();
-    auto keys_lcp = get_keys_by_lcp(text, 2, 2, 32, 32);
-    finish = std::chrono::system_clock::now();
-    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
-    std::cout << "Get keys lcp: " << elapsed.count() << std::endl;
-    std::cout << "keys_lcp size: " << keys_lcp.size() << std::endl << std::endl;
+//    start = std::chrono::system_clock::now();
+//    auto keys_lcp = get_keys_by_lcp(text, 2, 2, 32, 32);
+//    finish = std::chrono::system_clock::now();
+//    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
+//    std::cout << "Get keys lcp: " << elapsed.count() << std::endl;
+//    std::cout << "keys_lcp size: " << keys_lcp.size() << std::endl << std::endl;
 
     size_t c=0, a;
-    std::cin>>a;
-    for(auto& i: keys_naive) {
-        //if(i.second!=keys_naive[i.first]) {
-        if(i.second!=keys_lcp[i.first]) {
-        //if(i.second<2) {
-            c++;
-            std::cout<<i.first<<"\t"<<i.second<<"\t"<<keys_lcp[i.first]<<std::endl;
-        }
-        //if(i.second>=2 && 2<=i.first.length()<=32) c++;
-//        if(!keys_lcp.count(i.first)) {
-//            std::cout<<i.first<<"\t"<<i.second<<"\t"<<countSubstring(text, i.first)<<std::endl;
+//    std::cin>>a;
+//    for(auto& i: keys_naive) {
+//        //if(i.second!=keys_naive[i.first]) {
+//        if(i.second!=keys_lcp[i.first]) {
+//        //if(i.second<2) {
+//            c++;
+//            std::cout<<i.first<<"\t"<<i.second<<"\t"<<keys_lcp[i.first]<<std::endl;
 //        }
-    }
+//        //if(i.second>=2 && 2<=i.first.length()<=32) c++;
+////        if(!keys_lcp.count(i.first)) {
+////            std::cout<<i.first<<"\t"<<i.second<<"\t"<<countSubstring(text, i.first)<<std::endl;
+////        }
+//    }
     std::cout<<"Counter: "<<c<<std::endl;
 
-//    compress(text, 32);
+    compress(text, 32);
     //compress(text, 32);
     //7200 20157 8895 36252
     //11016 17120 13072 41208
