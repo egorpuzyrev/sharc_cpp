@@ -61,7 +61,10 @@
 		<Unit filename="markov.hpp">
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
-		<Unit filename="rabinkarp.cpp" />
+		<Unit filename="rabinkarp.cpp">
+			<Option compile="0" />
+			<Option link="0" />
+		</Unit>
 		<Unit filename="rabinkarp.hpp">
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>

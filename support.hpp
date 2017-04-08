@@ -19,4 +19,7 @@ std::vector<size_t> prefix_function(const std::string& s);
 size_t KMP_count(const std::string& S, const std::string& pattern, size_t start=0);
 size_t preKMP_count(const std::vector<size_t>& prefix, const std::string& S, const std::string& pattern, size_t start=0);
 
+const auto BASE=256;
+size_t fasthash(std::string s, size_t base=BASE);
+
 #endif // SUPPORT_HPP_INCLUDED

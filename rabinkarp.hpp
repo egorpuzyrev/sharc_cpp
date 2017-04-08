@@ -5,28 +5,13 @@
 #include <vector>
 #include <iterator>
 #include <map>
+//#include <multimap>
 #include <algorithm>
 #include <iterator>
 #include <unordered_set>
 
-#include "rabinkarp.hpp"
 #include "global.hpp"
-#include "global.hpp"
-
-const auto BASE=256;
-
-
-//size_t fasthash(std::string s, size_t base=BASE);
-
-size_t fasthash(std::string s, size_t base=BASE) {
-    size_t c=1, res=0;
-    for(auto& i: s) {
-        res += i*c;
-        c *= base;
-    }
-
-    return res;
-}
+#include "support.hpp"
 
 
 //Counts<std::string> multicount(std::string text, std::vector<std::string> patterns);
@@ -34,6 +19,7 @@ template<class CustomIterator>
 Counts<std::string> multicount(std::string text, CustomIterator first, CustomIterator last) {
     //std::vector<size_t> hashes;
     //hashes.reserve(patterns.size());
+    size_t l=text.length();
     Counts<std::string> counts;
     std::map<std::string, size_t> hashes;
     std::map<size_t, std::string> rhashes;
@@ -46,6 +32,7 @@ Counts<std::string> multicount(std::string text, CustomIterator first, CustomIte
     CustomIterator it=first;
     while(it!=last) {
         auto i = (*it);
+        counts[i] = 0;
         h = fasthash(i, BASE);
         hashes[i] = h;
         rhashes[h] = i;
@@ -61,13 +48,20 @@ Counts<std::string> multicount(std::string text, CustomIterator first, CustomIte
     std::sort(patterns_lens.begin(), patterns_lens.end());
 
     std::string sub;
-    for(size_t i=0; i<text.length()-patterns_lens[0]; i++) {
-        for(auto& j: cur_hashes) {
-            sub = text.substr(i, j.first);
-            j.second = fasthash(sub, BASE);
-            if(rhashes.count(j.second)) {
-                if(sub==rhashes[j.second]) {
-                    counts[sub] += 1;
+    size_t cur_hash;
+    for(size_t i=0; i<l; i++) {
+        for(auto& j: patterns_lens) {
+//        for(size_t j=1; j<=patterns_lens[patterns_lens.size()-1]; j++) {
+            if(l-i>=j) {
+                sub = text.substr(i, j);
+//                if(j==sub.length()) {
+                //cur_hash = fasthash(sub, BASE);
+                //j.second = cur_hash;
+                //if(rhashes.count(cur_hash)) {
+                if(hashes.count(sub)) {
+                    //if(sub==rhashes[cur_hash]) {
+                        counts[sub] += 1;
+                    //}
                 }
             }
         }

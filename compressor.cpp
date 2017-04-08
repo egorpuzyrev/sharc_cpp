@@ -91,7 +91,7 @@ std::string compress(std::string text, size_t block_size) {
         std::cout<<">>>>>>>>intersections: "<<key<<"\t"<<keys.count(key)<<std::endl;
         std::vector<std::string> new_intersections;
         n = 0;
-        bool t1, t2;
+        //bool t1, t2;
         for(auto& i: keys) {
             key2 = i.first;
             new_intersections = get_keys_intersections(key, key2);

@@ -220,3 +220,16 @@ size_t preKMP_count(const std::vector<size_t>& prefix, const std::string& S, con
 }
 
 //Counts<std::string>
+
+
+size_t fasthash(std::string s, size_t base) {
+    size_t c=1, res=0;
+    for(auto& i: s) {
+        res += i*c;
+//    for(auto i=s.length()-1; i!=0; i--) {
+//        res += s[i]*c;
+//        c *= base;
+    }
+
+    return res;
+}
