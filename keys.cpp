@@ -11,7 +11,9 @@
 #include "lcp.hpp"
 #include "rabinkarp.hpp"
 
-Counts<std::string> get_keys_naive(std::string text, size_t factor, size_t min_len, size_t max_len) {
+#include <easy/profiler.h>
+
+Counts<std::string> get_keys_naive(const std::string& text, size_t factor, size_t min_len, size_t max_len) {
 
     size_t pos = 0;
     size_t c = min_len;
@@ -29,7 +31,8 @@ Counts<std::string> get_keys_naive(std::string text, size_t factor, size_t min_l
 //            std::cout<<"sub="<<sub;
             if(!keys_set.count(sub)) {
 //                cnt = std::count(text.begin(), text.end(), sub);
-                keys_set.emplace(sub);
+//                keys_set.emplace(sub);
+                keys_set.insert(sub);
                 cnt = countSubstring(text, sub);
                 if(cnt>factor) {
                     keys[sub] = cnt;
@@ -46,8 +49,8 @@ Counts<std::string> get_keys_naive(std::string text, size_t factor, size_t min_l
 }
 
 
-Counts<std::string> get_keys_by_lcp(std::string text, size_t factor, size_t min_len, size_t max_len, size_t block_size) {
-
+Counts<std::string> get_keys_by_lcp(const std::string& text, size_t factor, size_t min_len, size_t max_len, size_t block_size) {
+    EASY_FUNCTION();
     auto start = std::chrono::system_clock::now();
     auto finish = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
@@ -120,7 +123,8 @@ Counts<std::string> get_keys_by_lcp(std::string text, size_t factor, size_t min_
             sub = prefix.substr(0, i);
 
             //keys[sub] = 0;
-            keys_set.emplace(sub);
+//            keys_set.emplace(sub);
+            keys_set.insert(sub);
 //            if(!keys_set.count(sub)) {
 //                keys_set.emplace(sub);
 //                cnt = countSubstring(text, sub);
@@ -152,12 +156,11 @@ Counts<std::string> get_keys_by_lcp(std::string text, size_t factor, size_t min_
 ////            }
 ////        }
 //    }
-    keys = multicount(text, keys_set.begin(), keys_set.end());
+    //keys = multicount(text, keys_set.begin(), keys_set.end());
+    keys = multicount(text, keys_set);
     finish = std::chrono::system_clock::now();
     elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
     std::cout<<"counting keys: "<< elapsed.count() << std::endl;
-
-    std::cout<<"ypsies in the count: "<<keys["ypsies in the"]<<std::endl;
 
     std::cout<<"Size before filtering: "<<keys.size()<<std::endl;
     start = std::chrono::system_clock::now();
@@ -165,7 +168,8 @@ Counts<std::string> get_keys_by_lcp(std::string text, size_t factor, size_t min_
     auto it=keys.begin();
     while(it!=keys.end()) {
         if((*it).second<=factor || (*it).first.length()<min_len || (*it).first.length()>max_len) {
-            keys.erase(it++);
+            //keys.erase(it++);
+            it = keys.erase(it);
         } else {
             ++it;
         }

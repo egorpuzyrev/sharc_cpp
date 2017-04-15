@@ -1,6 +1,7 @@
 #ifndef RABINKARP_HPP_INCLUDED
 #define RABINKARP_HPP_INCLUDED
 
+#include <iostream>
 #include <string>
 #include <vector>
 #include <iterator>
@@ -9,29 +10,36 @@
 #include <algorithm>
 #include <iterator>
 #include <unordered_set>
+#include <set>
 
 #include "global.hpp"
 #include "support.hpp"
 
+#include <easy/profiler.h>
 
-//Counts<std::string> multicount(std::string text, std::vector<std::string> patterns);
+
+Counts<std::string> multicount(std::string text, const std::unordered_set<std::string>& hashes_set);
+
 template<class CustomIterator>
-Counts<std::string> multicount(std::string text, CustomIterator first, CustomIterator last) {
-
+Counts<std::string> multicount(const std::string& text, CustomIterator first, CustomIterator last) {
+    EASY_FUNCTION();
     size_t l=text.length();
     Counts<std::string> counts;
     std::unordered_set<std::string> hashes_set;
+//    std::set<std::string> hashes_set;
 
-    std::unordered_set<size_t> patterns_lens_set;
+//    std::unordered_set<size_t> patterns_lens_set;
+    std::set<size_t> patterns_lens_set;
 
     CustomIterator it=first;
     //#pragma parallel
 //    while(it!=last) {
     for(;it!=last; it++) {
-        auto i = (*it);
-        hashes_set.emplace((*it));
-        patterns_lens_set.emplace((*it).length());
-        counts[i] = 0;
+//        hashes_set.emplace((*it));
+        hashes_set.insert((*it));
+//        patterns_lens_set.emplace((*it).length());
+        patterns_lens_set.insert((*it).length());
+        counts[(*it)] = 0;
 //        ++it;
     }
 
@@ -53,6 +61,10 @@ Counts<std::string> multicount(std::string text, CustomIterator first, CustomIte
         }
     }
 
+    std::cout<<std::endl<<"rabinkarp keys:"<<std::endl;
+    for(auto& i: counts) {
+        std::cout<<"\t<"<<i.first<<">\t"<<i.second<<std::endl;
+    }
 
     return counts;
 }

@@ -8,7 +8,10 @@
 
 #include "support.hpp"
 
+#include <easy/profiler.h>
+
 size_t countSubstring(const std::string& str, const std::string& sub) {
+    EASY_FUNCTION(0xfff080aa);
     if (sub.length() == 0) return 0;
     size_t count = 0, l = sub.length();
     for (size_t offset = str.find(sub); offset != std::string::npos; offset = str.find(sub, offset + l))
@@ -115,6 +118,7 @@ bool is_keys_intersect(std::string key1, std::string key2) {
 
 
 std::vector<std::string> get_keys_intersections(std::string key1, std::string key2) {
+    EASY_FUNCTION();
     if(key1.size()>key2.size()) {
         auto key3 = key2;
         key2 = key1;
@@ -233,4 +237,27 @@ size_t fasthash(std::string s, size_t base) {
     }
 
     return res;
+}
+
+
+
+size_t divide_rounding_up(size_t dividend, size_t divisor) {
+    return (dividend + divisor - 1) / divisor;
+}
+
+std::string dump_bits(const std::vector<bool>& bitvector) {
+    std::string ret(divide_rounding_up(bitvector.size(), 8), 0);
+    auto out = ret.begin();
+    int shift = 0;
+
+    for(bool bit: bitvector) {
+        *out |= bit << shift;
+
+        if (++shift == 8) {
+            ++out;
+            shift = 0;
+        }
+    }
+
+    return ret;
 }

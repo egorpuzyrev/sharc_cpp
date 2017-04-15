@@ -1,3 +1,4 @@
+#include <iostream>
 #include <string>
 #include <vector>
 #include <map>
@@ -9,62 +10,65 @@
 #include "global.hpp"
 
 
-size_t fasthash(std::string s, size_t base) {
-    size_t c=1, res=0;
-    for(auto& i: s) {
-        res += i*c;
-        c *= base;
+Counts<std::string> multicount(std::string text, const std::unordered_set<std::string>& hashes_set) {
+    EASY_FUNCTION();
+
+    size_t l=text.length();
+    Counts<std::string> counts;
+    std::map<std::string, int> prev_pos;
+
+    std::unordered_set<size_t> patterns_lens_set;
+
+//    std::cout<<"To find: ";
+    for(auto it=hashes_set.begin();it!=hashes_set.end(); it++) {
+//        patterns_lens_set.emplace((*it).length());
+        patterns_lens_set.insert((*it).length());
+        counts[(*it)] = 0;
+        prev_pos[(*it)] = -(*it).length()-1;
+//        std::cout<<"\t<"<<(*it)<<">";
+//        ++it;
     }
 
-    return res;
-}
+    std::vector<size_t> patterns_lens;
+    for(auto& i: patterns_lens_set) {
+        patterns_lens.push_back(i);
+    }
 
+    std::sort(patterns_lens.begin(), patterns_lens.end());
 
-////Counts<std::string> multicount(std::string text, std::vector<std::string> patterns) {
-//template<class CustomIterator>
-//Counts<std::string> multicount(std::string text, CustomIterator first, CustomIterator last) {
-//    //std::vector<size_t> hashes;
-//    //hashes.reserve(patterns.size());
-//    Counts<std::string> counts;
-//    std::map<std::string, size_t> hashes;
-//    std::map<size_t, std::string> rhashes;
-//    size_t h;
-//
-//    std::map<size_t, size_t> cur_hashes;
-//
-//    //for(auto& i: patterns) {
-//    //for(auto& i=patterns_begin; i!=patterns_end; i++) {
-//    CustomIterator it=first;
-//    while(it!=last) {
-//        auto i = (*it);
-//        h = fasthash(i, BASE);
-//        hashes[i] = h;
-//        rhashes[h] = i;
-//        cur_hashes[i.length()] = 0;
-//        ++it;
-//    }
-//
-//    std::vector<size_t> patterns_lens;
-//    for(auto& i: cur_hashes) {
-//        patterns_lens.push_back(i.first);
-//    }
-//
-//    std::sort(patterns_lens.begin(), patterns_lens.end());
-//
-//    std::string sub;
-//    for(size_t i=0; i<text.length()-patterns_lens[0]; i++) {
-//        for(auto& j: cur_hashes) {
-//            sub = text.substr(i, j.first);
-//            j.second = fasthash(sub, BASE);
-//            if(rhashes.count(j.second)) {
-//                if(sub==rhashes[j.second]) {
-//                    counts[sub] += 1;
-//                }
+    std::string sub;
+//    for(size_t i=0; i<l; i++) {
+//        std::cout<<"Pos: "<<i<<std::endl;
+//        for(const auto& j: patterns_lens) {
+//            sub = text.substr(i, j);
+//            if(hashes_set.count(sub)) {
+//                counts[sub] += 1;
+//                std::cout<<"\t<"<<sub<<">\t"<<counts[sub]<<std::endl;
 //            }
 //        }
 //    }
-//
-//
-//    return counts;
-//}
+
+    for(size_t& cur_len: patterns_lens) {
+        size_t i=0;
+        for(size_t i=0; i<=l-cur_len; i+=1) {
+//        std::cout<<"Pos: "<<i<<std::endl;
+            sub = text.substr(i, cur_len);
+            if(hashes_set.count(sub)) {
+                if(i-prev_pos[sub]>=cur_len) {
+                    prev_pos[sub] = i;
+                    counts[sub] += 1;
+//                    std::cout<<"\t<"<<sub<<">\t"<<counts[sub]<<std::endl;
+                }
+            }
+        }
+    }
+
+//    std::cout<<std::endl<<"rabinkarp keys:"<<std::endl;
+//    for(auto& i: counts) {
+//        std::cout<<"\t<"<<i.first<<">\t"<<i.second<<std::endl;
+//    }
+
+    return counts;
+}
+
 

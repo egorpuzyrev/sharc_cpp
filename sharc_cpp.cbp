@@ -14,8 +14,17 @@
 				<Compiler>
 					<Add option="-std=c++11" />
 					<Add option="-g" />
+					<Add option="-fexceptions" />
 					<Add option="-std=c++1y" />
+					<Add option="-fopenmp" />
+					<Add option="-s" />
+					<Add option="-lboost_iostreams" />
+					<Add option="-DBUILD_WITH_EASY_PROFILER" />
+					<Add directory="/home/egor/usr/include" />
 				</Compiler>
+				<Linker>
+					<Add directory="/home/egor/usr/lib/" />
+				</Linker>
 			</Target>
 			<Target title="Release">
 				<Option output="bin/Release/sharc_cpp" prefix_auto="1" extension_auto="1" />
@@ -25,6 +34,12 @@
 				<Compiler>
 					<Add option="-O2" />
 					<Add option="-std=c++11" />
+					<Add option="-fexceptions" />
+					<Add option="-std=c++1y" />
+					<Add option="-fopenmp" />
+					<Add option="-s" />
+					<Add option="-lboost_iostreams" />
+					<Add option="-DBUILD_WITH_EASY_PROFILER" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -35,9 +50,16 @@
 			<Add option="-Wall" />
 			<Add option="-std=c++11" />
 			<Add option="-fexceptions" />
-			<Add option="-s" />
 			<Add option="-std=c++1y" />
+			<Add option="-s" />
+			<Add option="-lboost_iostreams" />
+			<Add option="-DBUILD_WITH_EASY_PROFILER" />
 		</Compiler>
+		<Linker>
+			<Add library="/home/egor/usr/lib/libeasy_profiler.so" />
+			<Add library="/usr/lib/libboost_iostreams.so.1.49.0" />
+			<Add directory="/home/egor/usr/lib/" />
+		</Linker>
 		<Unit filename="argparse.hpp" />
 		<Unit filename="base64.cpp" />
 		<Unit filename="base64.hpp">
@@ -61,15 +83,19 @@
 		<Unit filename="markov.hpp">
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
-		<Unit filename="rabinkarp.cpp">
-			<Option compile="0" />
-			<Option link="0" />
-		</Unit>
+		<Unit filename="rabinkarp.cpp" />
 		<Unit filename="rabinkarp.hpp">
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="statistics.cpp" />
 		<Unit filename="statistics.hpp" />
+		<Unit filename="string_compressors.cpp">
+			<Option compile="0" />
+			<Option link="0" />
+		</Unit>
+		<Unit filename="string_compressors.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
 		<Unit filename="support.cpp" />
 		<Unit filename="support.hpp">
 			<Option target="&lt;{~None~}&gt;" />

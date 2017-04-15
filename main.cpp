@@ -12,6 +12,11 @@
 #include "base64.hpp"
 #include "argparse.hpp"
 
+#include <easy/profiler.h>
+#include <easy/reader.h>
+//EASY_PROFILER_ENABLE;
+
+
 std::string repeat( const std::string &word, int times ) {
    std::string result ;
    result.reserve(times*word.length()); // avoid repeated reallocation
@@ -21,16 +26,23 @@ std::string repeat( const std::string &word, int times ) {
 }
 
 int main() {
+    EASY_PROFILER_ENABLE;
+    //EASY_MAIN_THREAD;
+    profiler::startListen();
     //std::string SampleString = repeat("karl_u_klari_ukral_koralli_a_klara_u_karla_ukrala_klarnet", 1000);
-    std::ifstream f("/home/egor/Загрузки/condoyle.txt");
+    std::ifstream f("/home/egor/Build/argparse.tar");
+    //std::ifstream f("/home/egor/Загрузки/condoyle.txt");
     //std::ifstream f("/home/egor/Загрузки/my_audios.html");
     //std::ifstream f("/home/egor/Programs/py/vm_book1.txt");
 
     std::string SampleString((std::istreambuf_iterator<char>(f)),
                  std::istreambuf_iterator<char>());
 
-    //std::string text = SampleString;
+//    std::string text = SampleString;
     std::string text = SampleString.substr(0, 100*1024);
+//    std::string text = "karl_u_klari_ukral_koralli_a_klara_u_karla_ukrala_klarnet";
+    //std::string text = "aaaasaaaaasaaaaasaaaaas";
+    //std::string text = "aaaasaaaaasa";
     //std::string text = base64_encode(SampleString.substr(0, 64*1024));
     std::cout<<"Text size: "<<text.size()<<std::endl;
 
@@ -64,7 +76,9 @@ int main() {
 //    }
     std::cout<<"Counter: "<<c<<std::endl;
 
-    compress(text, 32);
+    EASY_BLOCK("Compress block");
+    compress_block(text, 32);
+    //EASY_END_BLOCK;
     //compress(text, 32);
     //7200 20157 8895 36252
     //11016 17120 13072 41208
@@ -124,6 +138,9 @@ int main() {
 //        std::cout << "'," << std::endl;
 //    }
 //    std::cout << "}" << std::endl;
-
+    EASY_END_BLOCK;
+    profiler::stopListen();
+    auto blocks_count = profiler::dumpBlocksToFile("test_profile.prof");
+    std::cout << "Blocks count: " << blocks_count << std::endl;
     return 0;
 }

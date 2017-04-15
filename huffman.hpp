@@ -43,28 +43,36 @@ struct NodeCmp
 };
 
 
+//template <typename DataType>
+//using MarkovChain = std::map<DataType, Counts<DataType>>;
+typedef std::vector<bool> HuffCode;
+
 template <typename DataType>
-using MarkovChain = std::map<DataType, Counts<DataType>>;
+using HuffCodeMap = std::map<DataType, HuffCode>;
+
 
 template <typename DataType>
 class HuffmanEncoder {
 
 public:
     //typedef Counts<DataType> HuffFreqs;
-    typedef std::vector<bool> HuffCode;
-    typedef std::map<DataType, HuffCode> HuffCodeMap;
+
 
     //HuffFreqs freqs;
     Counts<DataType> freqs;
-    HuffCodeMap outCodes;
+    HuffCodeMap<DataType> outCodes;
 
     HuffmanEncoder() {};
+    HuffmanEncoder(Counts<DataType> frequencies) {
+        this->freqs = frequencies;
+    };
     //HuffmanEncoder(Counts<DataType> frequencies): freqs(frequencies) {};
     ~HuffmanEncoder() {};
 
     //void InitFrequencies(HuffFreqs frequencies) {
     void InitFrequencies(Counts<DataType> frequencies) {
         this->freqs = frequencies;
+        this->outCodes.clear();
     };
 
     void Encode() {
@@ -112,6 +120,45 @@ public:
             GenerateCodes(in->right, rightPrefix);
         }
     };
+
+
+//    std::array<std::vector<bool>, 3> pack(bool if_sort=1,
+//                                          bool (*sort_fun)(std::string s1, std::string s2)=[](std::string s1, std::string s2){return s1>s2;}) {
+    std::array<HuffCode, 3> pack(std::vector<DataType> keys) {
+//        std::vector<std::string> keys;
+//        for(auto& i: this->freqs) {
+//            keys.push_back(i.first);
+//        }
+//        if(if_sort) {
+//            std::sort(keys.begin(), keys.end(), sort_fun);
+//        }
+
+        HuffCode keys_mask;
+        HuffCode keys_huffman_codes;
+        HuffCode keys_huffman_codes_mask;
+
+        bool cur_mask = 1;
+        for(const auto& key: keys) {
+//            for(auto j=0; j<key.length(); j++) {
+//                keys_mask.push_back(cur_mask);
+//            }
+            //keys_mask.reserve(keys_mask.size() + key.length());
+            keys_mask.insert(keys_mask.end(), key.size(), cur_mask);
+
+            //keys_huffman_codes.reserve(keys_huffman_codes.size() + this->outCodes[key].size());
+            keys_huffman_codes.insert(keys_huffman_codes.end(), this->outCodes[key].begin(), this->outCodes[key].end());
+//            for(auto j=0; j<this->outCodes[key].size(); j++) {
+//                keys_huffman_codes_mask.push_back();
+//            }
+            //keys_huffman_codes_mask.reserve(keys_huffman_codes_mask.size() + this->outCodes[key].size());
+            keys_huffman_codes_mask.insert(keys_huffman_codes_mask.end(), this->outCodes[key].size(), cur_mask);
+
+            cur_mask ^= 1;
+        }
+
+//        return std::array<std::vector<bool>>({keys_mask, key_huffman_codes, keys_huffman_codes_mask});
+        return {keys_mask, keys_huffman_codes, keys_huffman_codes_mask};
+    }
 };
 
 

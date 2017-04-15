@@ -4,6 +4,11 @@
 #include <algorithm>
 #include <iostream>
 #include <cmath>
+#include <numeric>
+
+#include <boost/algorithm/algorithm.hpp>
+#include <boost/algorithm/string.hpp>
+
 #include "global.hpp"
 #include "statistics.hpp"
 #include "keys.hpp"
@@ -11,44 +16,16 @@
 #include "markov.hpp"
 #include "support.hpp"
 #include "compressor.hpp"
+#include "rabinkarp.hpp"
+#include "string_compressors.hpp"
 
-const char ID[] = "sharc";
-const char VERSION[] = "02";
-
-typedef struct CompressedFile_s {
-    /// section 1
-    /// format description
-    char id[5];
-    char version[2];
-
-    /// section 2
-    /// blocks description
-    uint64_t compressed_block_length;
-    char preprocessor;
-    char keys_compression_method;
-
-    uint32_t keys_count;
-    uint32_t uncompressed_keys_list_length;
-    uint32_t compressed_keys_list_length;
-    uint32_t terminator_code_length;
-
-    char* keys;
-    char* keys_mask;
-
-    char* terminator_code;
-    char* keys_codes;
-    char* transitions_codes;
-
-    uint32_t encoded_message_length;
-    uint32_t transitions_keys_count;
-    uint32_t transitions_keys_length;
-    char* transitions_leys_mask;
-
-} CompressedFile;
+#include <easy/profiler.h>
 
 
-std::string compress(std::string text, size_t block_size) {
+std::string compress_block(std::string text, size_t block_size) {
+    EASY_FUNCTION();
     std::string res;
+    CompressedBlock compressed_block;
 
     float max_weight;
     std::string s, key, key1, key2;
@@ -63,12 +40,17 @@ std::string compress(std::string text, size_t block_size) {
     /// calculation of keys_stack
     std::cout<<">>>get_keys_naive()"<<std::endl;
 //    Counts<std::string> keys = get_keys_naive(text, 2, 1, 1);
+    EASY_BLOCK("Get keys block");
     Counts<std::string> keys = get_keys_by_lcp(text, 2, 1, block_size, block_size);
+    EASY_END_BLOCK
+
     Counts<std::string> keys_copy(keys.begin(), keys.end());
+
+    EASY_BLOCK("Calculation of keys_stack block");
     std::cout<<">>>calculation of keys_stack"<<std::endl;
     while(keys.size()) {
         std::cout<<"keys left: "<<keys.size()<<std::endl;
-        weights = get_weights(get_weight5, keys, L1, bi, B);
+        weights = get_weights(get_weight1, keys, L1, bi, B);
         max_weight = -1.0;
         for(auto& i: weights) {
             if(i.second>max_weight) {
@@ -86,27 +68,52 @@ std::string compress(std::string text, size_t block_size) {
 
         N = keys[key];
         keys.erase(key);
-        keys[key] = 0;
+        //keys[key] = 0;
 
         std::cout<<">>>>>>>>intersections: "<<key<<"\t"<<keys.count(key)<<std::endl;
         std::vector<std::string> new_intersections;
+        std::unordered_set<std::string> to_count;
+        std::map<std::string, std::unordered_set<std::string>> cur_intersections;
+
         n = 0;
         //bool t1, t2;
         //#pragma omp parallel
+        EASY_BLOCK("Calculation of intersections block");
         for(auto& i: keys) {
+
             key2 = i.first;
+            //std::cout<<"key2: "<<key2<<std::endl;
             new_intersections = get_keys_intersections(key, key2);
             n = 0;
+
+            cur_intersections[key2] = std::unordered_set<std::string>(new_intersections.begin(), new_intersections.end());
+            //std::cout<<"Sub"<<std::endl;
+            //to_count.clear();
             for(auto& j: new_intersections) {
                 if(!keys_intersections.count(j)) {
                     if(keys_copy.count(j)) {
                         keys_intersections[j] = keys_copy[j];
                     } else {
-                        keys_intersections[j] = countSubstring(text, j);
+//                        keys_intersections[j] = countSubstring(text, j);
+//                        to_count.emplace(j);
+                        to_count.insert(j);
                     }
                 }
-                n += keys_intersections[j];
-                //n += keys_intersections[j];
+            }
+        }
+
+        Counts<std::string> to_substract = multicount(text, to_count);
+        keys_intersections.insert(to_substract.begin(), to_substract.end());
+        //to_substract.clear();
+
+        for(auto& i: keys) {
+
+            key2 = i.first;
+            n=0;
+            for(auto& j: cur_intersections[key2]) {
+                if(keys_intersections.count(j)) {
+                    n += keys_intersections[j];
+                }
 
                 if(keys.count(j)) {
                     if(keys[j]-N<2 || keys[j]-N>keys[j]) {
@@ -116,14 +123,20 @@ std::string compress(std::string text, size_t block_size) {
                     }
                 }
             }
-            if(keys.count(key2)) {
+
+//            if(n>0) {
+//                std::cout<<"<"<<key<<">\t<"<<key2<<">\t"<<n<<std::endl;
+//            }
+
+//            if(keys.count(key2)) {
                 if(keys[key2]-n<2 || keys[key2]-n>keys[key2]) {
                     keys[key2] = 0;
                 } else {
                     keys[key2] -= n;
                 }
-            }
+//            }
         }
+        EASY_END_BLOCK;
 //        std::cout<<"5"<<std::endl;
         std::cout<<"keys before filter: "<<keys.size()<<std::endl;
         auto it = keys.begin();
@@ -142,6 +155,7 @@ std::string compress(std::string text, size_t block_size) {
 //               splitted.end());
         //std::cin>>s;
     }
+    EASY_END_BLOCK;
 
     /// splitting text with keys in keys_stack
     std::unordered_set<std::string> keys_set(keys_stack.begin(), keys_stack.end());
@@ -170,9 +184,9 @@ std::string compress(std::string text, size_t block_size) {
                    splitted.end());
 
     std::cout<<"\n\n\n>>>>>>>>keys_stack:";
-    for(auto& i: keys_stack) {
-        std::cout<<"\t<"<<i<<">"<<std::endl;
-    }
+//    for(auto& i: keys_stack) {
+//        std::cout<<"\t<"<<i<<">";
+//    }
 //    std::cout<<"\n\n\n>>>>>>>>splitted 1:";
 //    for(auto& i: splitted) {
 //        std::cout<<"\t<"<<i<<">"<<std::endl;
@@ -234,6 +248,7 @@ std::string compress(std::string text, size_t block_size) {
         std::cout<<"\t<"<<i<<">";//<<std::endl;
         sum += i.size();
     }
+    std::cout<<"\n\n\n>>>>>>>>keys_stack with alpha keys: "<<keys_stack.size()<<std::endl;
     std::cout<<std::endl<<"total len of keys: "<<sum<<std::endl;
 
     /// building markov chain
@@ -253,6 +268,7 @@ std::string compress(std::string text, size_t block_size) {
         });
 
         sorted_keys_tree[key] = std::vector<std::string>();
+        sorted_keys_tree[key].reserve(vec.size());
         for(auto& j: vec) {
             sorted_keys_tree[key].push_back(j.first);
             keys_tree_stat[j.first] += 1;
@@ -261,7 +277,7 @@ std::string compress(std::string text, size_t block_size) {
         vec.clear();
     }
 
-    HuffmanEncoder<std::string>huff_string;
+    HuffmanEncoder<std::string> huff_string;
     huff_string.InitFrequencies(keys_tree_stat);
     huff_string.Encode();
     auto huff_tree_str = huff_string.outCodes;
@@ -282,7 +298,7 @@ std::string compress(std::string text, size_t block_size) {
     /// encoding
     //std::string key1, key2;
     std::vector<size_t> encoded;
-    size_t code;
+    size_t code, max_code=0;
     Counts<size_t> stat;
     for(auto it=splitted.begin()+1; it!=splitted.end()-1; it++) {
         key1 = *it;
@@ -291,6 +307,7 @@ std::string compress(std::string text, size_t block_size) {
         code = std::find(sorted_keys_tree[key1].begin(), sorted_keys_tree[key1].end(), key2) - sorted_keys_tree[key1].begin();
         encoded.push_back(code);
         stat[code] += 1;
+        max_code = std::max(code, max_code);
     }
 
 //    std::cout<<"\t\tencoded.size\thuff_tree\tkeys tree\t"<<std::endl;
@@ -325,6 +342,72 @@ std::string compress(std::string text, size_t block_size) {
     ///sum - суммарный размер закодированного дерева переходов
 
     std::cout<<"\t"<<total<<std::endl;
+
+
+    compressed_block.keys_count = keys_stack.size();
+
+    std::vector<std::string> ordered_keys;
+    ordered_keys.reserve(keys.size());
+
+    for(auto& i: keys_stack) {
+        ordered_keys.push_back(i);
+    }
+
+    std::sort(ordered_keys.begin(), ordered_keys.end());
+    //std::sort(ordered_keys.begin(), ordered_keys.end(), [](auto a, auto b){return a.size()>b.size();});
+
+    std::string keys_string = boost::algorithm::join(ordered_keys, "");
+//    for(auto& i: ordered_keys) {
+//        keys_string += i;
+//    }
+
+    std::string compressed_keys_string = Gzip::compress(keys_string);
+
+    std::cout<<"Size of keys_string: "<<keys_string.size()<<" "<<sizeof(keys_string)<<std::endl;
+    std::cout<<"Size of compressed_keys_string: "<<compressed_keys_string.size()<<" "<<sizeof(compressed_keys_string)<<std::endl;
+
+    //auto packed_trans_tree = huff_string.pack(ordered_keys);
+
+    HuffCode keys_mask;
+    HuffCode keys_huffman_codes;
+    HuffCode keys_huffman_codes_mask;
+
+    bool cur_mask = 1;
+    for(const auto& key: ordered_keys) {
+        keys_mask.insert(keys_mask.end(), key.size(), cur_mask);
+        keys_huffman_codes.insert(keys_huffman_codes.end(), huff_string.outCodes[key].begin(), huff_string.outCodes[key].end());
+        keys_huffman_codes_mask.insert(keys_huffman_codes_mask.end(), huff_string.outCodes[key].size(), cur_mask);
+
+        cur_mask ^= 1;
+    }
+
+    std::vector<size_t> stat_vec(max_code);
+    std::iota(stat_vec.begin(), stat_vec.end(), 0);
+
+
+    auto mtfed = mtf(ordered_keys, splitted);
+    Counts<size_t> mtf_counts;
+    std::cout<<"MTF: "<<std::endl;
+    for(auto& i: mtfed) {
+        //std::cout<<"\t"<<i;
+        mtf_counts[i] += 1;
+    }
+
+    HuffmanEncoder<size_t> mtf_huffenc;
+    mtf_huffenc.InitFrequencies(mtf_counts);
+    mtf_huffenc.Encode();
+    auto mtf_huff_tree = mtf_huffenc.outCodes;
+
+    size_t sum5=0, sum6=0;
+    for(auto& i: mtf_huff_tree) {
+        sum5 += i.second.size()*mtf_counts[i.first];
+        sum6 += i.second.size();
+    }
+
+    std::cout<<"sum5: "<<sum5/8<<std::endl;
+    std::cout<<"sum6: "<<sum6/8<<std::endl;
+    std::cout<<"sum5+6: "<<(sum5+sum6)/8<<std::endl;
+
 
     return res;
 }
