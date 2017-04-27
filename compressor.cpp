@@ -1,6 +1,7 @@
 #include <string>
 #include <map>
 #include <unordered_set>
+#include <unordered_map>
 #include <algorithm>
 #include <iostream>
 #include <fstream>
@@ -34,7 +35,8 @@ std::string compress_block(std::string text, size_t block_size) {
     size_t n, N, bi=2, L=text.length();
     size_t L1=L;
     std::vector<std::string> keys_stack;
-    Counts<std::string> keys_intersections;
+//    Counts<std::string> keys_intersections;
+    std::unordered_map<std::string, size_t> keys_intersections;
     fCounts<std::string> weights;
 
 
@@ -123,20 +125,23 @@ std::string compress_block(std::string text, size_t block_size) {
 
             std::cout<<"Looking for independent key..."<<std::endl;
             independent_key_found = false;
-            while(!independent_key_found) {
+            while(!independent_key_found && !sorted_by_weights.empty()) {
+                std::cout<<"0 ";
                 key2 = sorted_by_weights.back().first;
                 sorted_by_weights.pop_back();
-
+                std::cout<<"1 ";
 //                weights.erase(key2);
                 independent_key_found = true;
                 for(auto it=keys_stack.begin()+last_checked_pos[key2]; it!=keys_stack.end(); it++) {
                     auto key = (*it);
                     last_checked_pos[key2] += 1;
                     new_intersections = get_keys_intersections(key, key2);
-
+                    std::cout<<"2 ";
                     if(!new_intersections.empty()) {
                         independent_key_found = false;
+                        std::cout<<"3 ";
                         to_check[key2][key] = std::vector<std::string>(new_intersections.begin(), new_intersections.end());
+                        std::cout<<"4 ";
                     }
                 }
             }
@@ -189,8 +194,8 @@ std::string compress_block(std::string text, size_t block_size) {
                         n += keys_intersections[j];
                         if(keys.count(j)) {
                             if(keys[j]-N<2 || keys[j]-N>keys[j]) {
-    //                                keys[j] = 0;
-                                keys.erase(j);
+                                keys[j] = 0;
+//                                keys.erase(j);
                             } else {
                                 keys[j] -= N;
                             }
@@ -199,9 +204,19 @@ std::string compress_block(std::string text, size_t block_size) {
                 }
 
                 if(keys[key2]-n<2 || keys[key2]-n>keys[key2]) {
-                    keys.erase(key2);
+                    keys[key2] = 0;
+//                    keys.erase(key2);
                 } else {
                     keys[key2] -= n;
+                }
+            }
+
+            //auto it = keys.begin();
+            for(auto it = keys.begin(); it != keys.end(); ) {
+                if (it->second < 2) {
+                    it = keys.erase(it);
+                } else {
+                    ++it;
                 }
             }
 
