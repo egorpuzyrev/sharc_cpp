@@ -30,9 +30,9 @@ int main() {
     //EASY_MAIN_THREAD;
     profiler::startListen();
     //std::string SampleString = repeat("karl_u_klari_ukral_koralli_a_klara_u_karla_ukrala_klarnet", 1000);
-    std::ifstream f("/home/egor/Build/argparse.tar");
+//    std::ifstream f("/home/egor/Build/argparse.tar");
     //std::ifstream f("/home/egor/Загрузки/condoyle.txt");
-    //std::ifstream f("/home/egor/Загрузки/my_audios.html");
+    std::ifstream f("/home/egor/Загрузки/my_audios.html");
     //std::ifstream f("/home/egor/Programs/py/vm_book1.txt");
 
     std::string SampleString((std::istreambuf_iterator<char>(f)),
