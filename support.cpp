@@ -5,6 +5,8 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <chrono>
 #include <iostream>
+#include <algorithm>
+#include <unordered_set>
 
 #include "support.hpp"
 
@@ -44,20 +46,26 @@ std::vector<std::string> split_string_by_token(const std::string& text, const st
 
 
 std::vector<std::string> split_string_by_tokens(const std::string& text, const std::vector<std::string>& tokens) {
-    std::vector<std::string> res;
+    std::vector<std::string> res = {text, };
     std::vector<std::string> new_res;
     std::vector<std::string> strs;
+    std::unordered_set<std::string> tokens_set(tokens.begin(), tokens.end());
 
-    res.push_back(text);
+//    res.push_back(text);
     for(auto& token: tokens) {
         for(std::string& str: res) {
 //            boost::split(strs, str, boost::is_any_of(token))
-            strs = split(str, token);
-            for(auto& j: strs) {
-                new_res.push_back(j);
-                new_res.push_back(token);
+//            if(std::find(tokens.begin(), tokens.end(), str)==tokens.end()) {
+            if(!tokens_set.count(str)) {
+                strs = split(str, token);
+                for(auto& j: strs) {
+                    new_res.push_back(j);
+                    new_res.push_back(token);
+                }
+                new_res.pop_back();
+            } else {
+                new_res.push_back(str);
             }
-            new_res.pop_back();
         }
         res = new_res;
         new_res.clear();

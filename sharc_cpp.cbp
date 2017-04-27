@@ -19,6 +19,7 @@
 					<Add option="-fopenmp" />
 					<Add option="-s" />
 					<Add option="-lboost_iostreams" />
+					<Add option="-pg" />
 					<Add option="-DBUILD_WITH_EASY_PROFILER" />
 					<Add directory="/home/egor/usr/include" />
 				</Compiler>
