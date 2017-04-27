@@ -59,11 +59,15 @@ std::string compress_block(std::string text, size_t block_size) {
 
 //    EASY_BLOCK("Calculation of keys_stack block");
     std::cout<<">>>calculation of keys_stack"<<std::endl;
-    bool flag;
+    bool flag, independent_key_found;
     std::vector<std::string> new_intersections, recent_keys;
     std::unordered_set<std::string> to_count;
     std::map<std::string, std::unordered_set<std::string>> cur_intersections;
+
     Counts<std::string> to_substract, last_checked_pos;
+    std::map<std::string, std::map<std::string, std::vector<std::string>>> to_check;
+
+    std::vector<std::string> sorted_by_weights;
     while(keys.size()) {
 //        std::cout<<"keys left: "<<keys.size()<<std::endl;
         weights = get_weights(get_weight5, keys, L1, bi, B);
@@ -71,29 +75,63 @@ std::string compress_block(std::string text, size_t block_size) {
         second_max_weight = -1.0;
 //        recent_keys.clear();
         flag = false;
+        independent_key_found = false;
 
-//        while(keys.size()) {
-            EASY_BLOCK("Choosing key with max wei");
-            for(auto& i: weights) {
-                if(i.second>max_weight) {
-                    max_weight = i.second;
-                    key2 = i.first;
+        EASY_BLOCK("Choosing key with max wei");
+        for(auto& i: weights) {
+            if(i.second>max_weight) {
+                max_weight = i.second;
+                key2 = i.first;
+            }
+        }
+        EASY_END_BLOCK;
+
+        //weights[key2] = -1;
+        weights.erase(key2);
+
+        for(auto it=keys_stack.begin()+last_checked_pos[key2]; it!=keys_stack.end(); it++) {
+            auto key = (*it);
+            new_intersections = get_keys_intersections(key, key2);
+
+            if(!new_intersections.empty()) {
+                flag = true;
+
+                to_check[key][key2] = std::vector<std::string>(new_intersections.begin(), new_intersections.end());
+            }
+        }
+
+
+        if(flag) {
+            sorted_by_weights.clear();
+            sorted_by_weights.reserve(weights.size());
+            for(const auto& i: weights) {
+                sorted_by_weights.push_back(i.first);
+            }
+            std::sort(sorted_by_weights.begin(), sorted_by_weights.end(), [&weights](const auto& a, const auto& b){return weights[a]<weights[b];});
+
+            independent_key_found = false;
+            while(!independent_key_found) {
+                key2 = sorted_by_weights.back();
+                sorted_by_weights.pop_back();
+
+//                weights.erase(key2);
+                independent_key_found = true;
+                for(auto it=keys_stack.begin()+last_checked_pos[key2]; it!=keys_stack.end(); it++) {
+                    auto key = (*it);
+                    new_intersections = get_keys_intersections(key, key2);
+
+                    if(!new_intersections.empty()) {
+                        independent_key_found = false;
+                        to_check[key2][key] = std::vector<std::string>(new_intersections.begin(), new_intersections.end());
+                    }
                 }
             }
-            EASY_END_BLOCK;
-//            std::cout<<"key2: <"<<key2<<">\t";
-            //for(auto& key: keys_stack) {
-            EASY_BLOCK("Check intersections");
-            for(auto it=keys_stack.begin()+last_checked_pos[key2]; it!=keys_stack.end(); it++) {
-                auto key = (*it);
-//                last_checked_pos[key2] += 1;
-                new_intersections = get_keys_intersections(key, key2);
-//                if(is_keys_intersect(key, key2)) {
-                if(!new_intersections.empty()) {
-                    flag = true;
-//                    N = last_keys_counts[key];
-//                    new_intersections = get_keys_intersections(key, key2);
-                    cur_intersections[key] = std::unordered_set<std::string>(new_intersections.begin(), new_intersections.end());
+
+
+            for(auto& it: to_check) {
+                for(auto& it1: it.second) {
+                    new_intersections = it1.second;
+
                     for(auto& j: new_intersections) {
                         if(!keys_intersections.count(j)) {
                             if(keys_copy.count(j)) {
@@ -114,8 +152,6 @@ std::string compress_block(std::string text, size_t block_size) {
                 }
             }
 
-//                    new_intersections.clear();
-            if(flag) {
             EASY_BLOCK("Counting intersections...");
             to_substract = multicount(text, to_count);
             keys_intersections.insert(to_substract.begin(), to_substract.end());
@@ -124,57 +160,144 @@ std::string compress_block(std::string text, size_t block_size) {
             to_count.clear();
             to_substract.clear();
 
+            for(auto& it: to_check) {
+                key2 = it.first;
+                n = 0;
+                for(auto& it1: it.second) {
+                    key = it1.first;
+                    N = last_keys_counts[key];
 
-            for(auto it=keys_stack.begin()+last_checked_pos[key2]; it!=keys_stack.end(); it++) {
-                auto key = (*it);
-                N = last_keys_counts[key];
-                last_checked_pos[key2] += 1;
-
-                n=0;
-                for(auto& j: cur_intersections[key]) {
-//                for(auto& j: new_intersections) {
-                    n += keys_intersections[j];
-
-                    if(keys.count(j)) {
-                        if(keys[j]-N<2 || keys[j]-N>keys[j]) {
-//                                keys[j] = 0;
-                            keys.erase(j);
-                        } else {
-                            keys[j] -= N;
+                    for(auto& j: it1.second) {
+                        n += keys_intersections[j];
+                        if(keys.count(j)) {
+                            if(keys[j]-N<2 || keys[j]-N>keys[j]) {
+    //                                keys[j] = 0;
+                                keys.erase(j);
+                            } else {
+                                keys[j] -= N;
+                            }
                         }
                     }
                 }
 
-
                 if(keys[key2]-n<2 || keys[key2]-n>keys[key2]) {
-                    //keys[key2] = 0;
                     keys.erase(key2);
                 } else {
                     keys[key2] -= n;
                 }
-                    //break;
             }
-            cur_intersections.clear();
 
-            EASY_END_BLOCK;
+        } else {
+            std::cout<<"new key = <"<<key2<<"> "<<keys[key2]<<std::endl;
+            std::cout<<"keys left: "<<keys.size()<<std::endl;
+            keys_stack.push_back(key2);
+            bi += 1;
+            L1 -= key.size()*keys[key2]+ceil(bi*keys[key2]/B);
 
-
-//            if(!flag) {
-//                break;
-            } else {
-                std::cout<<"new key = <"<<key2<<"> "<<keys[key2]<<std::endl;
-                std::cout<<"keys left: "<<keys.size()<<std::endl;
-                keys_stack.push_back(key2);
-                bi += 1;
-                L1 -= key.size()*keys[key2]+ceil(bi*keys[key2]/B);
-
-//                N = keys[key];
-                last_keys_counts[key] = keys[key];
-                keys.erase(key2);
-                weights.erase(key2);
+            last_keys_counts[key] = keys[key];
+            keys.erase(key2);
+            weights.erase(key2);
 //                recent_keys.push_back(key);
-                max_weight = 0;
-            }
+//            max_weight = 0;
+        }
+    }
+
+
+//
+////            std::cout<<"key2: <"<<key2<<">\t";
+//            //for(auto& key: keys_stack) {
+//            EASY_BLOCK("Check intersections");
+//            for(auto it=keys_stack.begin()+last_checked_pos[key2]; it!=keys_stack.end(); it++) {
+//                auto key = (*it);
+////                last_checked_pos[key2] += 1;
+//                new_intersections = get_keys_intersections(key, key2);
+////                if(is_keys_intersect(key, key2)) {
+//                if(!new_intersections.empty()) {
+//                    flag = true;
+////                    N = last_keys_counts[key];
+////                    new_intersections = get_keys_intersections(key, key2);
+//                    cur_intersections[key] = std::unordered_set<std::string>(new_intersections.begin(), new_intersections.end());
+//                    for(auto& j: new_intersections) {
+//                        if(!keys_intersections.count(j)) {
+//                            if(keys_copy.count(j)) {
+//                                keys_intersections[j] = keys_copy[j];
+//                            } else {
+//                                if(text.find(j) != std::string::npos) {
+//                                    if(j.size()>block_size) {
+//                                        to_count.insert(j);
+//                                    } else {
+//                                        keys_intersections[j] = 1;
+//                                    }
+//                                } else {
+//                                    keys_intersections[j] = 0;
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//
+////                    new_intersections.clear();
+//            if(flag) {
+//            EASY_BLOCK("Counting intersections...");
+//            to_substract = multicount(text, to_count);
+//            keys_intersections.insert(to_substract.begin(), to_substract.end());
+//            EASY_END_BLOCK;
+//
+//            to_count.clear();
+//            to_substract.clear();
+//
+//
+//            for(auto it=keys_stack.begin()+last_checked_pos[key2]; it!=keys_stack.end(); it++) {
+//                auto key = (*it);
+//                N = last_keys_counts[key];
+//                last_checked_pos[key2] += 1;
+//
+//                n=0;
+//                for(auto& j: cur_intersections[key]) {
+////                for(auto& j: new_intersections) {
+//                    n += keys_intersections[j];
+//
+//                    if(keys.count(j)) {
+//                        if(keys[j]-N<2 || keys[j]-N>keys[j]) {
+////                                keys[j] = 0;
+//                            keys.erase(j);
+//                        } else {
+//                            keys[j] -= N;
+//                        }
+//                    }
+//                }
+//
+//
+//                if(keys[key2]-n<2 || keys[key2]-n>keys[key2]) {
+//                    //keys[key2] = 0;
+//                    keys.erase(key2);
+//                } else {
+//                    keys[key2] -= n;
+//                }
+//                    //break;
+//            }
+//            cur_intersections.clear();
+//
+//            EASY_END_BLOCK;
+//
+//
+////            if(!flag) {
+////                break;
+//            } else {
+//                std::cout<<"new key = <"<<key2<<"> "<<keys[key2]<<std::endl;
+//                std::cout<<"keys left: "<<keys.size()<<std::endl;
+//                keys_stack.push_back(key2);
+//                bi += 1;
+//                L1 -= key.size()*keys[key2]+ceil(bi*keys[key2]/B);
+//
+////                N = keys[key];
+//                last_keys_counts[key] = keys[key];
+//                keys.erase(key2);
+//                weights.erase(key2);
+////                recent_keys.push_back(key);
+//                max_weight = 0;
+//            }
 //        }
 //        std::cin>>key1;
 //        std::cout<<"keys before filter: "<<keys.size()<<std::endl;
@@ -262,7 +385,7 @@ std::string compress_block(std::string text, size_t block_size) {
 ////            std::cout<<"keys after filter: "<<keys.size()<<std::endl;
 //        }
 //        std::cout<<"keys after filter: "<<keys.size()<<std::endl;
-    }
+//    }
 
 
 
