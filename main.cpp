@@ -39,7 +39,7 @@ int main() {
                  std::istreambuf_iterator<char>());
 
 //    std::string text = SampleString;
-    std::string text = SampleString.substr(0, 100*1024);
+    std::string text = SampleString.substr(0, 128*1024);
 //    std::string text = "karl_u_klari_ukral_koralli_a_klara_u_karla_ukrala_klarnet";
     //std::string text = "aaaasaaaaasaaaaasaaaaas";
     //std::string text = "aaaasaaaaasa";
@@ -77,7 +77,7 @@ int main() {
     std::cout<<"Counter: "<<c<<std::endl;
 
     EASY_BLOCK("Compress block");
-    compress_block(text, 32);
+    compress_block(text, 16);
     //EASY_END_BLOCK;
     //compress(text, 32);
     //7200 20157 8895 36252
