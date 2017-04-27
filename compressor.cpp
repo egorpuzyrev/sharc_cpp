@@ -67,7 +67,8 @@ std::string compress_block(std::string text, size_t block_size) {
     std::map<std::string, std::unordered_set<std::string>> cur_intersections;
 
     Counts<std::string> to_substract, last_checked_pos;
-    std::map<std::string, std::map<std::string, std::vector<std::string>>> to_check;
+//    std::map<std::string, std::map<std::string, std::vector<std::string>>> to_check;
+    std::unordered_map<std::string, std::unordered_map<std::string, std::vector<std::string>>> to_check;
 
 //    std::vector<std::string> sorted_by_weights;
     std::vector<std::pair<std::string, float>> sorted_by_weights;
@@ -426,7 +427,7 @@ std::string compress_block(std::string text, size_t block_size) {
 
 
     keys_intersections.clear();
-
+    std::cout<<"Splitting string..."<<std::endl;
     /// splitting text with keys in keys_stack
     std::unordered_set<std::string> keys_set(keys_stack.begin(), keys_stack.end());
     std::vector<std::string> splitted = {text, }, new_splitted;

@@ -39,7 +39,7 @@ int main() {
                  std::istreambuf_iterator<char>());
 
 //    std::string text = SampleString;
-    std::string text = SampleString.substr(0, 32*1024);
+    std::string text = SampleString.substr(0, 128*1024);
 //    std::string text = "karl_u_klari_ukral_koralli_a_klara_u_karla_ukrala_klarnet";
     //std::string text = "aaaasaaaaasaaaaasaaaaas";
     //std::string text = "aaaasaaaaasa";
