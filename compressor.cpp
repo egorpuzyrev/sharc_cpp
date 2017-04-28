@@ -22,11 +22,11 @@
 #include "string_compressors.hpp"
 #include "base64.hpp"
 
-#include <easy/profiler.h>
+//#include <easy/profiler.h>
 
 
 std::string compress_block(std::string text, size_t block_size) {
-    EASY_FUNCTION();
+//    EASY_FUNCTION();
     std::string res;
     CompressedBlock compressed_block;
 
@@ -44,7 +44,7 @@ std::string compress_block(std::string text, size_t block_size) {
     /// calculation of keys_stack
     std::cout<<">>>get_keys_naive()"<<std::endl;
 //    Counts<std::string> keys = get_keys_naive(text, 2, 1, 1);
-    EASY_BLOCK("Get keys block");
+//    EASY_BLOCK("Get keys block");
     Counts<std::string> keys_copy = get_keys_by_lcp(text, 1, 2, 2*block_size, block_size);;
     std::unordered_map<std::string, size_t> keys_intersections(keys_copy.begin(), keys_copy.end());
     Counts<std::string> keys;
@@ -54,7 +54,7 @@ std::string compress_block(std::string text, size_t block_size) {
             keys[i.first] = i.second;
         }
     }
-    EASY_END_BLOCK
+//    EASY_END_BLOCK
 
 //    std::ofstream out;
 //    out.open("keys.csv");
@@ -84,7 +84,7 @@ std::string compress_block(std::string text, size_t block_size) {
     std::vector<std::pair<std::string, float>> sorted_by_weights;
     while(keys.size()) {
 //        std::cout<<"keys left: "<<keys.size()<<std::endl;
-        weights = get_weights(get_weight5, keys, L1, bi, B);
+        weights = get_weights(get_weight3, keys, L1, bi, B);
         max_weight = -1.0;
 //        second_max_weight = -1.0;
 //        recent_keys.clear();

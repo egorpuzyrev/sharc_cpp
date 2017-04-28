@@ -15,14 +15,14 @@
 #include "global.hpp"
 #include "support.hpp"
 
-#include <easy/profiler.h>
+//#include <easy/profiler.h>
 
 
 Counts<std::string> multicount(std::string text, const std::unordered_set<std::string>& hashes_set);
 
 template<class CustomIterator>
 Counts<std::string> multicount(const std::string& text, CustomIterator first, CustomIterator last) {
-    EASY_FUNCTION();
+//    EASY_FUNCTION();
     size_t l=text.length();
     Counts<std::string> counts;
     std::unordered_set<std::string> hashes_set;

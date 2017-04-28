@@ -10,10 +10,10 @@
 
 #include "support.hpp"
 
-#include <easy/profiler.h>
+//#include <easy/profiler.h>
 
 size_t countSubstring(const std::string& str, const std::string& sub) {
-    EASY_FUNCTION(0xfff080aa);
+//    EASY_FUNCTION(0xfff080aa);
     if (sub.length() == 0) return 0;
     size_t count = 0, l = sub.length();
     for (size_t offset = str.find(sub); offset != std::string::npos; offset = str.find(sub, offset + l))
@@ -126,7 +126,7 @@ bool is_keys_intersect(std::string key1, std::string key2) {
 
 
 std::vector<std::string> get_keys_intersections(std::string key1, std::string key2) {
-    EASY_FUNCTION();
+//    EASY_FUNCTION();
     if(key1.size()>key2.size()) {
         auto key3 = key2;
         key2 = key1;

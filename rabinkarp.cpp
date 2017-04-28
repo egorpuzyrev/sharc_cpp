@@ -11,7 +11,7 @@
 
 
 Counts<std::string> multicount(std::string text, const std::unordered_set<std::string>& hashes_set) {
-    EASY_FUNCTION();
+//    EASY_FUNCTION();
 
     size_t l=text.length();
     Counts<std::string> counts;

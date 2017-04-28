@@ -11,7 +11,7 @@
 #include "lcp.hpp"
 #include "rabinkarp.hpp"
 
-#include <easy/profiler.h>
+//#include <easy/profiler.h>
 
 Counts<std::string> get_keys_naive(const std::string& text, size_t factor, size_t min_len, size_t max_len) {
 
@@ -50,7 +50,7 @@ Counts<std::string> get_keys_naive(const std::string& text, size_t factor, size_
 
 
 Counts<std::string> get_keys_by_lcp(const std::string& text, size_t factor, size_t min_len, size_t max_len, size_t block_size) {
-    EASY_FUNCTION();
+//    EASY_FUNCTION();
     auto start = std::chrono::system_clock::now();
     auto finish = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);

@@ -84,7 +84,7 @@ std::vector<size_t> get_lcp(const std::vector<std::pair<std::string, size_t>> &s
 std::vector<std::string> get_common_prefixes(std::string text) {
 
     std::vector<std::pair<std::string, size_t>> sorted_suffixes = get_suffixes(text);
-    std::sort(sorted_suffixes.begin(), sorted_suffixes.end(), [](auto a, auto b){return a.first>b.first;});
+    std::sort(sorted_suffixes.begin(), sorted_suffixes.end(), [](const auto& a, const auto& b){return a.first>b.first;});
 
     std::vector<size_t> lcps = get_lcp(sorted_suffixes);
     std::vector<std::string> res;
