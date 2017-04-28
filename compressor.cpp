@@ -38,7 +38,8 @@ std::string compress_block(std::string text, size_t block_size) {
     std::vector<std::string> keys_stack;
 //    Counts<std::string> keys_intersections;
 //    std::unordered_map<std::string, size_t> keys_intersections;
-    fCounts<std::string> weights;
+//    fCounts<std::string> weights;
+    std::unordered_map<std::string, float> weights;
 
 
     /// calculation of keys_stack
@@ -49,8 +50,10 @@ std::string compress_block(std::string text, size_t block_size) {
     std::unordered_map<std::string, size_t> keys_intersections(keys_copy.begin(), keys_copy.end());
     Counts<std::string> keys;
     //Counts<std::string> keys = get_keys_by_lcp(text, 1, 2, 2*block_size, block_size);
+    float limweight = get_weight2("--", 2, L1, bi, B);
+    //weights = get_weights(get_weight3, keys, L1, bi, B);
     for(const auto& i: keys_copy) {
-        if(i.second>1) {
+        if(i.second>1 && get_weight2(i.first, i.second, L1, bi, B)>limweight) {
             keys[i.first] = i.second;
         }
     }
@@ -84,7 +87,8 @@ std::string compress_block(std::string text, size_t block_size) {
     std::vector<std::pair<std::string, float>> sorted_by_weights;
     while(keys.size()) {
 //        std::cout<<"keys left: "<<keys.size()<<std::endl;
-        weights = get_weights(get_weight3, keys, L1, bi, B);
+//        weights = get_weights(get_weight3, keys, L1, bi, B);
+        weights = get_uweights(get_weight3, keys, L1, bi, B);
         max_weight = -1.0;
 //        second_max_weight = -1.0;
 //        recent_keys.clear();
@@ -114,7 +118,7 @@ std::string compress_block(std::string text, size_t block_size) {
             if(!new_intersections.empty()) {
 //                std::cout<<new_intersections[0]<<std::endl;
                 flag = true;
-                weights.erase(key2);
+//                weights.erase(key2);
                 to_check[key2][key] = std::vector<std::string>(new_intersections.begin(), new_intersections.end());
             }
         }
@@ -132,7 +136,7 @@ std::string compress_block(std::string text, size_t block_size) {
 
             sorted_by_weights.insert(sorted_by_weights.end(), weights.begin(), weights.end());
             std::sort(sorted_by_weights.begin(), sorted_by_weights.end(), [](const auto& a, const auto& b){return a.second<b.second;});
-
+            sorted_by_weights.pop_back();
 //            std::cout<<"Looking for independent key..."<<std::endl;
             independent_key_found = false;
             while(!independent_key_found && !sorted_by_weights.empty()) {
@@ -241,8 +245,12 @@ std::string compress_block(std::string text, size_t block_size) {
             }
 
             //auto it = keys.begin();
+//            weights = get_uweights(get_weight2, keys, L1, bi, B);
+            limweight = get_weight2("--", 2, L1, bi, B);
             for(auto it = keys.begin(); it != keys.end(); ) {
-                if (it->second < 2) {
+//                if (it->second < 2) {
+//                if (it->second < 2 || weights[it->first]<=limweight) {
+                if (it->second < 2 || get_weight2(it->first, keys[it->first], L1, bi, B)<=limweight) {
                     it = keys.erase(it);
                 } else {
                     ++it;
@@ -261,7 +269,7 @@ std::string compress_block(std::string text, size_t block_size) {
 
             last_keys_counts[key] = keys[key];
             keys.erase(key2);
-            weights.erase(key2);
+//            weights.erase(key2);
 //                recent_keys.push_back(key);
 //            max_weight = 0;
         }
@@ -458,7 +466,8 @@ std::string compress_block(std::string text, size_t block_size) {
     std::cout<<"Splitting string..."<<std::endl;
     /// splitting text with keys in keys_stack
     std::unordered_set<std::string> keys_set(keys_stack.begin(), keys_stack.end());
-    std::vector<std::string> splitted = {text, }, new_splitted;
+    std::vector<std::string> splitted=split_string_by_tokens(text, keys_stack), new_splitted;
+//    std::vector<std::string> splitted = {text, }, new_splitted;
 //    for(auto& key: keys_stack) {
 //        for(auto& str: splitted) {
 //            if(!str.empty() && !keys_set.count(str)) {
@@ -474,8 +483,6 @@ std::string compress_block(std::string text, size_t block_size) {
 //        splitted = new_splitted;
 //        new_splitted.clear();
 //    }
-    splitted = split_string_by_tokens(text, keys_stack);
-
     /// clear empty vals
     splitted.erase(
                    std::remove_if(splitted.begin(),

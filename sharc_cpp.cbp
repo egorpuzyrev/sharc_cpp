@@ -13,15 +13,11 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-std=c++1y" />
-					<Add option="-std=c++11" />
 					<Add option="-pg" />
 					<Add option="-g" />
 					<Add option="-fexceptions" />
 					<Add option="-fopenmp" />
-					<Add option="-s" />
 					<Add option="-lboost_iostreams" />
-					<Add option="-std=c++1y" />
-					<Add option="-pg" />
 					<Add option="-DBUILD_WITH_EASY_PROFILER" />
 					<Add directory="/home/egor/usr/include" />
 				</Compiler>
@@ -37,9 +33,8 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-O2" />
-					<Add option="-std=c++11" />
-					<Add option="-fexceptions" />
 					<Add option="-std=c++1y" />
+					<Add option="-fexceptions" />
 					<Add option="-fopenmp" />
 					<Add option="-s" />
 					<Add option="-lboost_iostreams" />
@@ -53,16 +48,14 @@
 		<Compiler>
 			<Add option="-Wall" />
 			<Add option="-std=c++1y" />
-			<Add option="-std=c++11" />
+			<Add option="-pg" />
 			<Add option="-fexceptions" />
-			<Add option="-s" />
 			<Add option="-lboost_iostreams" />
 			<Add option="-fopenmp" />
-			<Add option="-std=c++1y" />
 			<Add option="-DBUILD_WITH_EASY_PROFILER" />
 		</Compiler>
 		<Linker>
-			<Add library="/home/egor/usr/lib/libeasy_profiler.so" />
+			<Add option="-pg" />
 			<Add library="/usr/lib/libboost_iostreams.so.1.49.0" />
 			<Add directory="/home/egor/usr/lib/" />
 		</Linker>
