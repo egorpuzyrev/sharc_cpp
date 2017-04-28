@@ -27,6 +27,7 @@
 
 std::string compress_block(std::string text, size_t block_size) {
 //    EASY_FUNCTION();
+    auto wei_fun = get_weight5;
     std::string res;
     CompressedBlock compressed_block;
 
@@ -39,14 +40,15 @@ std::string compress_block(std::string text, size_t block_size) {
 //    Counts<std::string> keys_intersections;
 //    std::unordered_map<std::string, size_t> keys_intersections;
 //    fCounts<std::string> weights;
-    std::unordered_map<std::string, float> weights;
+    std::unordered_map<std::string, float> weights, new_weights;
 
+    std::unordered_set<std::string> recalculate;
 
     /// calculation of keys_stack
     std::cout<<">>>get_keys_naive()"<<std::endl;
 //    Counts<std::string> keys = get_keys_naive(text, 2, 1, 1);
 //    EASY_BLOCK("Get keys block");
-    Counts<std::string> keys_copy = get_keys_by_lcp(text, 1, 2, 2*block_size, block_size);;
+    Counts<std::string> keys_copy = get_keys_by_lcp(text, 1, 2, block_size, block_size);
     std::unordered_map<std::string, size_t> keys_intersections(keys_copy.begin(), keys_copy.end());
     Counts<std::string> keys;
     //Counts<std::string> keys = get_keys_by_lcp(text, 1, 2, 2*block_size, block_size);
@@ -86,10 +88,21 @@ std::string compress_block(std::string text, size_t block_size) {
 
 //    std::vector<std::string> sorted_by_weights;
     std::vector<std::pair<std::string, float>> sorted_by_weights;
+//    weights = get_uweights(get_weight3, keys, L1, bi, B);
+    weights = get_uweights(wei_fun, keys, L1, bi, B);
+    sorted_by_weights.reserve(weights.size());
+    sorted_by_weights.insert(sorted_by_weights.end(), weights.begin(), weights.end());
+    std::sort(sorted_by_weights.begin(), sorted_by_weights.end(), [](const auto& a, const auto& b){return a.second<b.second;});
+    weights.clear();
+    std::cout<<"sorted_by_weights.size(): "<<sorted_by_weights.size()<<std::endl;
+    std::cout<<"keys.size(): "<<keys.size()<<std::endl;
+//    std::cin>>n;
     while(keys.size()) {
+//        std::cout<<"\nsorted_by_weights.size() before: "<<sorted_by_weights.size()<<std::endl;
+//        std::cout<<"keys.size() before: "<<keys.size()<<std::endl;
 //        std::cout<<"keys left: "<<keys.size()<<std::endl;
 //        weights = get_weights(get_weight3, keys, L1, bi, B);
-        weights = get_uweights(get_weight3, keys, L1, bi, B);
+
         max_weight = -1.0;
 //        second_max_weight = -1.0;
 //        recent_keys.clear();
@@ -98,12 +111,19 @@ std::string compress_block(std::string text, size_t block_size) {
 
 //        EASY_BLOCK("Choosing key with max wei");
 //        std::cout<<"\n\nChoosing key with max weight..."<<std::endl;
-        for(auto& i: weights) {
-            if(i.second>max_weight) {
-                max_weight = i.second;
-                key2 = i.first;
-            }
-        }
+///--------------------------------------------------------------------------------
+//        for(auto& i: weights) {
+//            if(i.second>max_weight) {
+//                max_weight = i.second;
+//                key2 = i.first;
+//            }
+//        }
+//        std::sort(sorted_by_weights.begin(), sorted_by_weights.end(), [](const auto& a, const auto& b){return a.second<b.second;});
+        key2 = sorted_by_weights.back().first;
+        sorted_by_weights.pop_back();
+//        std::cout<<">>>pop: "<<std::endl;
+//        std::cout<<"\t<"<<key2<<">"<<std::endl;
+///--------------------------------------------------------------------------------
 //        EASY_END_BLOCK;
 
         //weights[key2] = -1;
@@ -113,7 +133,8 @@ std::string compress_block(std::string text, size_t block_size) {
         for(auto it=keys_stack.begin()+last_checked_pos[key2]; it!=keys_stack.end(); it++) {
             auto key = (*it);
             last_checked_pos[key2] += 1;
-            new_intersections = get_keys_intersections(key, key2);
+            new_intersections = get_keys_intersections_wh(key, key2);
+//            new_intersections = get_keys_intersections(key, key2);
 //            std::cout<<"new_intersections.size(): "<<new_intersections.size()<<std::endl;
 
             if(!new_intersections.empty()) {
@@ -121,13 +142,18 @@ std::string compress_block(std::string text, size_t block_size) {
                 flag = true;
 //                weights.erase(key2);
                 to_check[key2][key] = std::vector<std::string>(new_intersections.begin(), new_intersections.end());
+                for(auto& j: new_intersections) {
+                    if(!keys_intersections.count(j)) {
+                        to_count.insert(j);
+                    }
+                }
             }
         }
 
 
         if(flag) {
 //            std::cout<<"Intersections found"<<std::endl;
-            sorted_by_weights.clear();
+//            sorted_by_weights.clear();
 //            sorted_by_weights.reserve(weights.size());
 //            std::cout<<"Sorting keys by max weight"<<std::endl;
 //            for(const auto& i: weights) {
@@ -135,25 +161,28 @@ std::string compress_block(std::string text, size_t block_size) {
 //            }
 //            std::sort(sorted_by_weights.begin(), sorted_by_weights.end(), [&weights](const auto& a, const auto& b){return weights[a]<weights[b];});
 
-            sorted_by_weights.insert(sorted_by_weights.end(), weights.begin(), weights.end());
-            std::sort(sorted_by_weights.begin(), sorted_by_weights.end(), [](const auto& a, const auto& b){return a.second<b.second;});
-            sorted_by_weights.pop_back();
+//            sorted_by_weights.insert(sorted_by_weights.end(), weights.begin(), weights.end());
+//            std::sort(sorted_by_weights.begin(), sorted_by_weights.end(), [](const auto& a, const auto& b){return a.second<b.second;});
+//            sorted_by_weights.pop_back();
 //            std::cout<<"Looking for independent key..."<<std::endl;
+//            std::cout<<">>>pop: "<<std::endl;
             independent_key_found = false;
             while(!independent_key_found && !sorted_by_weights.empty()) {
 //                std::cout<<"0 ";
                 key2 = sorted_by_weights.back().first;
                 sorted_by_weights.pop_back();
+//                std::cout<<"\t<"<<key2<<">"<<std::endl;
 //                std::cout<<"1 ";
 //                weights.erase(key2);
-
+                independent_key_found = true;
                 for(auto it=keys_stack.begin()+last_checked_pos[key2]; it!=keys_stack.end(); it++) {
                     auto key = (*it);
                     last_checked_pos[key2] += 1;
-                    new_intersections = get_keys_intersections(key, key2);
+                    new_intersections = get_keys_intersections_wh(key, key2);
+//                    new_intersections = get_keys_intersections(key, key2);
 //                    std::cout<<"2 ";
                     if(!new_intersections.empty()) {
-//                        independent_key_found = false;
+                        independent_key_found = false;
 //                        std::cout<<"3 ";
                         to_check[key2][key] = std::vector<std::string>(new_intersections.begin(), new_intersections.end());
 //                        std::cout<<"4 ";
@@ -162,10 +191,16 @@ std::string compress_block(std::string text, size_t block_size) {
                                 to_count.insert(j);
                             }
                         }
-                    } else {
-                        independent_key_found = true;
                     }
+//                    else {
+//                        independent_key_found = true;
+//                    }
                 }
+            }
+
+            if(independent_key_found) {
+//                weights[key2] = get_weight3(key2, keys[key2], L1, bi, B);
+                weights[key2] = wei_fun(key2, keys[key2], L1, bi, B);
             }
 //            std::cout<<"Independent key found: <"<<key2<<">"<<std::endl;
 
@@ -227,6 +262,7 @@ std::string compress_block(std::string text, size_t block_size) {
             to_substract.clear();
 
 //            std::cout<<"Substracting..."<<std::endl;
+            limweight = get_weight2("--", 2, L1, bi, B);
             for(auto& it: to_check) {
                 key2 = it.first;
                 n = 0;
@@ -239,36 +275,106 @@ std::string compress_block(std::string text, size_t block_size) {
                         if(keys.count(j)) {
                             if(keys[j]-N<2 || keys[j]-N>keys[j]) {
                                 keys[j] = 0;
-//                                keys.erase(j);
+                                weights[j] = 0;
+//                                weights.erase(j);
                             } else {
                                 keys[j] -= N;
+//                                weights[j] = get_weight3(j, keys[j], L1, bi, B);
+                                weights[j] = wei_fun(j, keys[j], L1, bi, B);
+                                if(get_weight2(j, keys[j], L1, bi, B)<=limweight) {
+                                    keys[j] = 0;
+                                    weights[j] = 0;
+//                                    weights.erase(j);
+                                }
+//                                else {
+//                                    weights[j] = get_weight3(j, keys[j], L1, bi, B);
+////                                    sorted_by_weights.push_back(std::make_pair(j, get_weight3(j, keys[j], L1, bi, B)));
+//                                }
                             }
                         }
                     }
                 }
 
+//                if(keys[key2]-n<2 || keys[key2]-n>keys[key2]) {
                 if(keys[key2]-n<2 || keys[key2]-n>keys[key2]) {
                     keys[key2] = 0;
-//                    keys.erase(key2);
+                    weights[key2] = 0;
+//                    weights.erase(key2);
                 } else {
                     keys[key2] -= n;
+//                    weights[key2] = get_weight3(key2, keys[key2], L1, bi, B);
+                    weights[key2] = wei_fun(key2, keys[key2], L1, bi, B);
+                    if(get_weight2(key2, keys[key2], L1, bi, B)<=limweight) {
+                        keys[key2] = 0;
+                        weights[key2] = 0;
+//                        weights.erase(key2);
+                    }
+//                    else {
+//                        weights[key2] = get_weight3(key2, keys[key2], L1, bi, B);
+////                        sorted_by_weights.push_back(std::make_pair(key2, get_weight3(key2, keys[key2], L1, bi, B)));
+//                    }
                 }
             }
 
             //auto it = keys.begin();
 //            weights = get_uweights(get_weight2, keys, L1, bi, B);
-            limweight = get_weight2("--", 2, L1, bi, B);
+//            limweight = get_weight2("--", 2, L1, bi, B);
             for(auto it = keys.begin(); it != keys.end(); ) {
-//                if (it->second < 2) {
+                if (it->second < 2) {
 //                if (it->second < 2 || weights[it->first]<=limweight) {
-                if (it->second < 2 || get_weight2(it->first, keys[it->first], L1, bi, B)<=limweight) {
+//                if (it->second < 2 || get_weight2(it->first, keys[it->first], L1, bi, B)<=limweight) {
+                    weights[it->first] = 0;
                     it = keys.erase(it);
                 } else {
                     ++it;
                 }
             }
 
+
+//            std::unordered_map<std::string, float> tmp_map(weights.begin(), weights.end());
+            for(auto it=sorted_by_weights.begin(); it!=sorted_by_weights.end(); it++) {
+                if(weights.count(it->first)) {
+//                    it->second = tmp_map[it->first];
+//                    tmp_map.erase(it->first);
+                    it->second = weights[it->first];
+                    weights[it->first] = 0;
+//                    weights.erase(it->first);
+                }
+            }
+
+//            for(auto it = weights.begin(); it != weights.end(); ) {
+//                if (it->second == 0.0) {
+//                    it = weights.erase(it);
+//                } else {
+//                    ++it;
+//                }
+//            }
+
+
+//            sorted_by_weights.insert(sorted_by_weights.end(), tmp_map.begin(), tmp_map.end());
+            sorted_by_weights.reserve(sorted_by_weights.size()+weights.size());
+            sorted_by_weights.insert(sorted_by_weights.end(), weights.begin(), weights.end());
+
+            sorted_by_weights.erase(
+                   std::remove_if(sorted_by_weights.begin(),
+                                  sorted_by_weights.end(),
+                                  [](auto& x){return x.second==0.0;}),
+                   sorted_by_weights.end());
+
+            std::sort(sorted_by_weights.begin(), sorted_by_weights.end(), [](const auto& a, const auto& b){return a.second<b.second;});
+
+//            std::unordered_map<std::string, float> tmp_map(sorted_by_weights.begin(), sorted_by_weights.end());
+//            for(auto& i: keys) {
+//                if(!tmp_map.count(i.first)) {
+//                    std::cout<<"\tmissed <"<<i.first<<"> "<<i.second<<std::endl;
+//                }
+//            }
+
+//            std::cout<<"sorted_by_weights.size() after: "<<sorted_by_weights.size()<<std::endl;
+//            std::cout<<"keys.size() after: "<<keys.size()<<std::endl;
+
             to_check.clear();
+            weights.clear();
 
         } else {
 //            std::cout<<"Intersections not found"<<std::endl;
@@ -278,7 +384,7 @@ std::string compress_block(std::string text, size_t block_size) {
             bi += 1;
             L1 -= key.size()*keys[key2]+ceil(bi*keys[key2]/B);
 
-            last_keys_counts[key] = keys[key];
+            last_keys_counts[key2] = keys[key2];
             keys.erase(key2);
 //            weights.erase(key2);
 //                recent_keys.push_back(key);
@@ -477,23 +583,25 @@ std::string compress_block(std::string text, size_t block_size) {
     std::cout<<"Splitting string..."<<std::endl;
     /// splitting text with keys in keys_stack
     std::unordered_set<std::string> keys_set(keys_stack.begin(), keys_stack.end());
-    std::vector<std::string> splitted=split_string_by_tokens(text, keys_stack), new_splitted;
-//    std::vector<std::string> splitted = {text, }, new_splitted;
-//    for(auto& key: keys_stack) {
-//        for(auto& str: splitted) {
-//            if(!str.empty() && !keys_set.count(str)) {
-//                //std::cout<<"div\t"<<str<<std::endl;
-//                auto div = split_string_by_token(str, key);
+//    std::vector<std::string> splitted=split_string_by_tokens(text, keys_stack);
+//    std::vector<std::string> new_splitted;
+    std::vector<std::string> splitted = {text, }, new_splitted;
+    for(auto& key: keys_stack) {
+        for(auto& str: splitted) {
+            if(!str.empty() && !keys_set.count(str)) {
+                //std::cout<<"div\t"<<str<<std::endl;
+                auto div = split_string_by_token(str, key);
 //                for(auto& i: div) {
 //                    new_splitted.push_back(i);
 //                }
-//            } else {
-//                new_splitted.push_back(str);
-//            }
-//        }
-//        splitted = new_splitted;
-//        new_splitted.clear();
-//    }
+                new_splitted.insert(new_splitted.end(), div.begin(), div.end());
+            } else {
+                new_splitted.push_back(str);
+            }
+        }
+        splitted = new_splitted;
+        new_splitted.clear();
+    }
     /// clear empty vals
     splitted.erase(
                    std::remove_if(splitted.begin(),
@@ -752,10 +860,10 @@ std::string compress_block(std::string text, size_t block_size) {
 //        keys_string += i;
 //    }
 
-    std::string compressed_keys_string = Bzip2::compress(keys_string);
+    std::string compressed_keys_string = Gzip::compress(keys_string);
 
     std::string non_compressed_text = boost::algorithm::join(non_compressed_seqs, "");
-    std::string compressed_non_compressed_text = Bzip2::compress(non_compressed_text);
+    std::string compressed_non_compressed_text = Gzip::compress(non_compressed_text);
 
     std::cout<<"\nmax_code: "<<max_code;
     std::cout<<"\nkeys count: "<<keys_stack.size()<<std::endl;
@@ -829,6 +937,10 @@ std::string compress_block(std::string text, size_t block_size) {
 
     std::cout<<"\nBzip2.compress(text).size(): "<<Bzip2::compress(text).size();
     std::cout<<"\nGzip.compress(text).size(): "<<Gzip::compress(text).size()<<std::endl;
+
+//    std::cout<<"\n\nPress any key to compress uncompressed"<<std::endl;
+//    std::cin>>n;
+//    compress_block(non_compressed_text, block_size);
 
     return res;
 }

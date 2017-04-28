@@ -7,6 +7,7 @@
 #include <iostream>
 #include <algorithm>
 #include <unordered_set>
+#include <functional>
 
 #include "support.hpp"
 
@@ -53,6 +54,7 @@ std::vector<std::string> split_string_by_tokens(const std::string& text, const s
 
 //    res.push_back(text);
     for(auto& token: tokens) {
+        new_res.reserve(res.size());
         for(std::string& str: res) {
 //            boost::split(strs, str, boost::is_any_of(token))
 //            if(std::find(tokens.begin(), tokens.end(), str)==tokens.end()) {
@@ -93,11 +95,17 @@ std::vector<std::string> split(const std::string& s, const std::string& delimite
 }
 
 
-bool is_keys_intersect(std::string key1, std::string key2) {
-    if(key1.size()>key2.size()) {
-        auto key3 = key2;
-        key2 = key1;
-        key1 = key3;
+bool is_keys_intersect(const std::string& key11, const std::string& key22) {
+    std::string key1, key2;
+    if(key11.size()>key22.size()) {
+//        auto key3 = key2;
+//        key2 = key1;
+//        key1 = key3;
+        key2 = key11;
+        key1 = key22;
+    } else {
+        key2 = key22;
+        key1 = key11;
     }
 
     bool res = (key2.find(key1)!=std::string::npos);
@@ -125,13 +133,20 @@ bool is_keys_intersect(std::string key1, std::string key2) {
 }
 
 
-std::vector<std::string> get_keys_intersections(std::string key1, std::string key2) {
+std::vector<std::string> get_keys_intersections(const std::string& key11, const std::string& key22) {
 //    EASY_FUNCTION();
-    if(key1.size()>key2.size()) {
-        auto key3 = key2;
-        key2 = key1;
-        key1 = key3;
+    std::string key1, key2;
+    if(key11.size()>key22.size()) {
+//        auto key3 = key2;
+//        key2 = key1;
+//        key1 = key3;
+        key2 = key11;
+        key1 = key22;
+    } else {
+        key2 = key22;
+        key1 = key11;
     }
+
 
     std::vector<std::string> intersections;
 
@@ -154,6 +169,58 @@ std::vector<std::string> get_keys_intersections(std::string key1, std::string ke
         sub = key1.substr(l-i, i);
         if(boost::algorithm::starts_with(key2, sub)) {
             intersections.push_back(key1.substr(0, l-i)+key2);
+        }
+    }
+
+    return intersections;
+}
+
+//std::vector<std::string> get_keys_intersections_wh(const std::string& key11, const std::string& key22) {
+std::vector<std::string> get_keys_intersections_wh(std::string key1, std::string key2) {
+//    EASY_FUNCTION();
+//    std::string key1, key2;
+//    if(key11.size()>key22.size()) {
+    if(key1.size()>key2.size()) {
+        auto key3 = key2;
+        key2 = key1;
+        key1 = key3;
+//        key2 = key11;
+//        key1 = key22;
+    }
+//    else {
+//        key2 = key22;
+//        key1 = key11;
+//    }
+
+
+    std::vector<std::string> intersections;
+    std::hash<std::string> str_hash;
+
+    bool res = (key2.find(key1)!=std::string::npos);
+    if(res) {
+        intersections.push_back(key2);
+    }
+    size_t l1=key1.size(), l2=key2.size();
+
+//    size_t l = key1.size();
+    std::string sub, sub2;
+//    sub2.reserve(key2);
+//    #pragma omp parallel for
+    for(size_t i=1; i<l1; i++) {
+//        std::cout<<"1 ";
+        sub = key1.substr(0, i);
+        //if(boost::algorithm::ends_with(key2, sub)) {
+        if(str_hash(key2.substr(l2-i, i))==str_hash(sub) && key2.substr(l2-i, i)==sub) {
+            intersections.push_back(key2+key1.substr(i, l1));
+        }
+    }
+//    #pragma omp parallel for
+    for(size_t i=1; i<l1; i++) {
+//        std::cout<<"2 ";
+        sub = key1.substr(l1-i, i);
+        //if(boost::algorithm::starts_with(key2, sub)) {
+        if(str_hash(key2.substr(0, i))==str_hash(sub) && key2.substr(0, i)==sub) {
+            intersections.push_back(key1.substr(0, l1-i)+key2);
         }
     }
 

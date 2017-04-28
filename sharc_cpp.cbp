@@ -18,6 +18,8 @@
 					<Add option="-fexceptions" />
 					<Add option="-fopenmp" />
 					<Add option="-lboost_iostreams" />
+					<Add option="-fprofile-arcs" />
+					<Add option="-ftest-coverage" />
 					<Add option="-DBUILD_WITH_EASY_PROFILER" />
 					<Add directory="/home/egor/usr/include" />
 				</Compiler>
@@ -56,6 +58,7 @@
 		</Compiler>
 		<Linker>
 			<Add option="-pg" />
+			<Add option="-static" />
 			<Add library="/usr/lib/libboost_iostreams.so.1.49.0" />
 			<Add directory="/home/egor/usr/lib/" />
 		</Linker>

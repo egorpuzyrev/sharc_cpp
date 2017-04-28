@@ -27,12 +27,12 @@ float get_weight4(std::string key, size_t n, size_t L, size_t bi, size_t b){
 
 float get_weight5(std::string key, size_t n, size_t L, size_t bi, size_t b){
     auto l = key.length();
-    return (float) (l)*log2(n);
+    return (float) (l)*log2(n+1);
 }
 
 float get_weight6(std::string key, size_t n, size_t L, size_t bi, size_t b){
     auto l = key.length();
-    return (float) sqrt(l)*log2(n);
+    return (float) sqrt(l)*log2(n+1);
 }
 
 fCounts<std::string> get_weights(float (*wei_fun)(std::string key, size_t n, size_t L, size_t bi, size_t b), Counts<std::string> keys, size_t L, size_t bi, size_t b){

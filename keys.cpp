@@ -56,8 +56,9 @@ Counts<std::string> get_keys_by_lcp(const std::string& text, size_t factor, size
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
 
     size_t L = text.length(), l, cnt;
+    size_t step = (size_t)block_size;
     //size_t step = (size_t)block_size-min_len;
-    size_t step = (size_t)block_size/2-min_len;
+//    size_t step = (size_t)block_size/2-min_len;
     //size_t step = (size_t)1;
     std::vector<std::string> blocks;
 
