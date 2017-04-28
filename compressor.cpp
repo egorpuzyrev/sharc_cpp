@@ -57,6 +57,7 @@ std::string compress_block(std::string text, size_t block_size) {
             keys[i.first] = i.second;
         }
     }
+    keys_copy.clear();
 //    EASY_END_BLOCK
 
 //    std::ofstream out;
@@ -145,55 +146,65 @@ std::string compress_block(std::string text, size_t block_size) {
                 sorted_by_weights.pop_back();
 //                std::cout<<"1 ";
 //                weights.erase(key2);
-                independent_key_found = true;
+
                 for(auto it=keys_stack.begin()+last_checked_pos[key2]; it!=keys_stack.end(); it++) {
                     auto key = (*it);
                     last_checked_pos[key2] += 1;
                     new_intersections = get_keys_intersections(key, key2);
 //                    std::cout<<"2 ";
                     if(!new_intersections.empty()) {
-                        independent_key_found = false;
+//                        independent_key_found = false;
 //                        std::cout<<"3 ";
                         to_check[key2][key] = std::vector<std::string>(new_intersections.begin(), new_intersections.end());
 //                        std::cout<<"4 ";
+                        for(auto& j: new_intersections) {
+                            if(!keys_intersections.count(j)) {
+                                to_count.insert(j);
+                            }
+                        }
+                    } else {
+                        independent_key_found = true;
                     }
                 }
             }
 //            std::cout<<"Independent key found: <"<<key2<<">"<<std::endl;
 
+///--------------------------------------------------------------------------------
 
-//            std::cout<<"Looking for subs need to be counted..."<<std::endl;
-            for(auto& it: to_check) {
-//                std::cout<<"6 ";
-                for(auto& it1: it.second) {
-                    new_intersections = it1.second;
-//                    std::cout<<"7 ";
-                    for(auto& j: new_intersections) {
-//                        std::cout<<"8 ";
-                        if(!keys_intersections.count(j)) {
-//                            if(keys_copy.count(j)) {
-//                                keys_intersections[j] = keys_copy[j];
-//                            } else {
-//                                std::cout<<"9 ";
-//                                to_count.insert(j);
-//                                if(text.find(j) != std::string::npos) {
-//                                    if(j.size()>block_size) {
-                                        to_count.insert(j);
-//                                    } else {
-//                                        keys_intersections[j] = 1;
-//                                    }
-//                                } else {
-//                                    keys_intersections[j] = 0;
-//                                }
-//                            }
-                        }
-                    }
-                }
-            }
+////            std::cout<<"Looking for subs need to be counted..."<<std::endl;
+//            for(auto& it: to_check) {
+////                std::cout<<"6 ";
+//                for(auto& it1: it.second) {
+//                    new_intersections = it1.second;
+////                    std::cout<<"7 ";
+//                    for(auto& j: new_intersections) {
+////                        std::cout<<"8 ";
+//                        if(!keys_intersections.count(j)) {
+////                            if(keys_copy.count(j)) {
+////                                keys_intersections[j] = keys_copy[j];
+////                            } else {
+////                                std::cout<<"9 ";
+////                                to_count.insert(j);
+////                                if(text.find(j) != std::string::npos) {
+////                                    if(j.size()>block_size) {
+//                                        to_count.insert(j);
+////                                    } else {
+////                                        keys_intersections[j] = 1;
+////                                    }
+////                                } else {
+////                                    keys_intersections[j] = 0;
+////                                }
+////                            }
+//                        }
+//                    }
+//                }
+//            }
+
+///--------------------------------------------------------------------------------
 //            std::cout<<"Need to count: "<<to_count.size()<<std::endl;
 //            EASY_BLOCK("Counting intersections...");
 //            std::cout<<"Counting intersections (multicount)"<<std::endl;
-            int more_than_1=0,more_than_0=0,maximal_len=0;
+//            int more_than_1=0,more_than_0=0,maximal_len=0;
             to_substract = multicount(text, to_count);
 //            for(auto& i: to_substract) {
 //                if(i.second>1) {
