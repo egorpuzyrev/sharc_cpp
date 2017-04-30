@@ -51,6 +51,8 @@ std::string compress_block(std::string text, size_t block_size, size_t markov_or
 //    EASY_BLOCK("Get keys block");
 //    Counts<std::string> keys_copy = get_keys_by_lcp(text, 1, 2, 2, 1);
     Counts<std::string> keys_copy = get_keys_by_lcp(text, 1, 2, block_size, block_size);
+//    Counts<std::string> keys_copy = get_keys_naive_mod(text, 1, 2, block_size);
+//    Counts<std::string> keys_copy = get_keys_naive(text, 1, 2, block_size);
     std::unordered_map<std::string, size_t> keys_intersections(keys_copy.begin(), keys_copy.end());
     Counts<std::string> keys;
     //Counts<std::string> keys = get_keys_by_lcp(text, 1, 2, 2*block_size, block_size);
@@ -715,8 +717,8 @@ std::string compress_block(std::string text, size_t block_size, size_t markov_or
     std::vector<MarkovChain<std::string>> markov_chains;
     std::vector<size_t> markov_chains_sizes;
     size_t model_size=0, min_model;
-    size_t min_model_size=0;
-//    size_t min_model_size=text.size();
+//    size_t min_model_size=0;
+    size_t min_model_size=text.size();
     markov_chains.reserve(markov_order);
     for(auto i=1; i<=markov_order; i++) {
         markov_chains.push_back(MarkovChain<std::string>(markov.build_chain(i)));
@@ -724,7 +726,7 @@ std::string compress_block(std::string text, size_t block_size, size_t markov_or
         for(auto& j: markov_chains.back()) {
             model_size += j.second.size();
         }
-        if(model_size>min_model_size) {
+        if(model_size<min_model_size) {
             min_model = markov_chains.size();
             min_model_size = model_size;
         }
@@ -828,6 +830,7 @@ std::string compress_block(std::string text, size_t block_size, size_t markov_or
     std::vector<size_t> encoded;
     size_t code, max_code=0;
     Counts<size_t> stat;
+    std::cout<<"\n\nencoded: ";
 //    for(auto it=splitted.begin()+1; it!=splitted.end()-1; it++) {
     for(auto it=splitted.begin(); it!=splitted.end()-markov_order; it++) {
         key1 = *it;
@@ -837,12 +840,33 @@ std::string compress_block(std::string text, size_t block_size, size_t markov_or
         code = std::find(sorted_keys_tree[key1].begin(), sorted_keys_tree[key1].end(), key2) - sorted_keys_tree[key1].begin() + 1;
 //        code = std::distance(std::find(sorted_keys_tree[key1].begin(), sorted_keys_tree[key1].end(), key2), sorted_keys_tree[key1].begin());
         encoded.push_back(code);
-        stat[code] += 1;
+        std::cout<<" "<<code;
+//        stat[code] += 1;
         max_code = std::max(code, max_code);
+    }
+
+    ///RLE
+    std::vector<size_t> rled;
+    rled.reserve(encoded.size());
+    size_t cur_code=encoded[0], run_len=0;
+    for(auto it=encoded.begin(); it!=encoded.end(); it++) {
+        if((*it)==cur_code) {
+            run_len += 1;
+        } else {
+            rled.push_back(run_len);
+            rled.push_back(cur_code);
+
+            stat[run_len] += 1;
+            stat[cur_code] += 1;
+
+            run_len = 1;
+            cur_code = (*it);
+        }
     }
 
 //    std::cout<<"\t\tencoded.size\thuff_tree\tkeys tree\t"<<std::endl;
     std::cout<<"\n\n\n>>>>>>>>encoded: "<<encoded.size()<<std::endl;
+    std::cout<<"\n\n\n>>>>>>>>rled: "<<rled.size()<<std::endl;
 
     HuffmanEncoder<size_t> huff;
     huff.InitFrequencies(stat);
@@ -860,6 +884,7 @@ std::string compress_block(std::string text, size_t block_size, size_t markov_or
 //    sum=0;
 
     size_t encoded_text_size = 0;
+//    for(auto& i: rled) {
     for(auto& i: encoded) {
 //        sum += huff_tree[i].size();
         encoded_text_size += huff_tree[i].size();
@@ -952,8 +977,9 @@ std::string compress_block(std::string text, size_t block_size, size_t markov_or
 
 //    auto mtfed = mtf(ordered_keys, splitted);
     auto mtfed = mtf(stat_vec, encoded);
+//    auto mtfed = mtf(stat_vec, rled);
     Counts<size_t> mtf_counts;
-    std::cout<<"MTF: "<<std::endl;
+    std::cout<<"\nMTF: "<<std::endl;
     for(auto& i: mtfed) {
         //std::cout<<"\t"<<i;
         mtf_counts[i] += 1;
@@ -977,9 +1003,14 @@ std::string compress_block(std::string text, size_t block_size, size_t markov_or
     std::cout<<"\nBzip2.compress(text).size(): "<<Bzip2::compress(text).size();
     std::cout<<"\nGzip.compress(text).size(): "<<Gzip::compress(text).size()<<std::endl;
 
-    std::cout<<"\n\nPress any key to compress uncompressed"<<std::endl;
-    std::cin>>n;
-    compress_block(non_compressed_text, block_size, markov_order);
+    std::cout<<"\n\nMTF(encoded): ";
+    for(auto& i: mtfed) {
+        std::cout<<" "<<i;
+    }
+
+//    std::cout<<"\n\nPress any key to compress uncompressed"<<std::endl;
+//    std::cin>>n;
+//    compress_block(non_compressed_text, block_size, markov_order);
 
     return res;
 }

@@ -49,18 +49,74 @@ Counts<std::string> get_keys_naive(const std::string& text, size_t factor, size_
 }
 
 
+Counts<std::string> get_keys_naive_mod(const std::string& text, size_t factor, size_t min_len, size_t max_len) {
+    auto fun_start = std::chrono::system_clock::now();
+
+
+    size_t pos = 0;
+    size_t c = min_len;
+    const size_t l = text.length();
+    Counts<std::string> keys;
+    std::unordered_set<std::string> keys_set, suffixes_set;
+
+    std::string sub;
+    size_t cnt;
+
+//    while(pos<l) {
+    for(pos=0; pos<l; pos++) {
+        c = min_len;
+        sub = text.substr(pos, c);
+        while(pos+c<=l && c<=max_len && keys_set.count(sub)) {
+            c += 1;
+            sub += text[pos+c-1];
+//            sub = text.substr(pos, c);
+        }
+
+        keys_set.insert(sub);
+
+        while(pos+c<=l && c<=max_len) {
+            c += 1;
+//            sub = text.substr(pos, c);
+            sub += text[pos+c-1];
+            keys_set.insert(sub);
+        }
+    }
+
+    keys = multicount(text, keys_set);
+
+    for(auto it=keys.begin(); it!=keys.end(); ) {
+        if((*it).second<=factor || (*it).first.length()<min_len) {
+            it = keys.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+
+    auto fun_finish = std::chrono::system_clock::now();
+    auto fun_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(fun_finish - fun_start);
+    std::cout<<"get_keys_naive_mod: "<< fun_elapsed.count() << std::endl;
+
+    return keys;
+}
+
+
 Counts<std::string> get_keys_by_lcp(const std::string& text, size_t factor, size_t min_len, size_t max_len, size_t block_size) {
 //    EASY_FUNCTION();
     auto start = std::chrono::system_clock::now();
+    auto fun_start = std::chrono::system_clock::now();
     auto finish = std::chrono::system_clock::now();
+    auto fun_finish = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
+    auto fun_elapsed = elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
 
     size_t L = text.length(), l, cnt;
-    size_t step = (size_t)block_size;
+//    size_t step = (size_t)block_size;
     //size_t step = (size_t)block_size-min_len;
 //    size_t step = (size_t)block_size/2-min_len;
-    //size_t step = (size_t)1;
+    size_t step = (size_t)1;
     std::vector<std::string> blocks;
+    std::set<std::string> blocks_set;
 
     start = std::chrono::system_clock::now();
     for(size_t i=0; i<L; i+=step) {
@@ -179,6 +235,10 @@ Counts<std::string> get_keys_by_lcp(const std::string& text, size_t factor, size
     elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
     std::cout<<"Size after filtering: "<<keys.size()<<std::endl;
     std::cout<<"filtering keys: "<< elapsed.count() << std::endl;
+
+    fun_finish = std::chrono::system_clock::now();
+    fun_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(fun_finish - fun_start);
+    std::cout<<"get_keys_by_lcp: "<< fun_elapsed.count() << std::endl;
 
     return keys;
 }
