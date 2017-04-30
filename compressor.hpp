@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-std::string compress_block(std::string text, size_t block_size);
+std::string compress_block(std::string text, size_t block_size, size_t markov_order);
 std::string decompress_block(std::string text);
 
 std::string compress(std::string text, size_t block_size);

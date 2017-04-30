@@ -24,10 +24,11 @@
 
 //#include <easy/profiler.h>
 
+const size_t ALPHA_LIMIT=2;
 
-std::string compress_block(std::string text, size_t block_size) {
+std::string compress_block(std::string text, size_t block_size, size_t markov_order) {
 //    EASY_FUNCTION();
-    auto wei_fun = get_weight5;
+    auto wei_fun = get_weight3;
     std::string res;
     CompressedBlock compressed_block;
 
@@ -48,6 +49,7 @@ std::string compress_block(std::string text, size_t block_size) {
     std::cout<<">>>get_keys_naive()"<<std::endl;
 //    Counts<std::string> keys = get_keys_naive(text, 2, 1, 1);
 //    EASY_BLOCK("Get keys block");
+//    Counts<std::string> keys_copy = get_keys_by_lcp(text, 1, 2, 2, 1);
     Counts<std::string> keys_copy = get_keys_by_lcp(text, 1, 2, block_size, block_size);
     std::unordered_map<std::string, size_t> keys_intersections(keys_copy.begin(), keys_copy.end());
     Counts<std::string> keys;
@@ -55,7 +57,8 @@ std::string compress_block(std::string text, size_t block_size) {
     float limweight = get_weight2("--", 2, L1, bi, B);
     //weights = get_weights(get_weight3, keys, L1, bi, B);
     for(const auto& i: keys_copy) {
-        if(i.second>1 && get_weight2(i.first, i.second, L1, bi, B)>limweight) {
+//        if(i.second>1 && get_weight2(i.first, i.second, L1, bi, B)>limweight) {
+        if(i.first.size()>ALPHA_LIMIT && i.second>=2 && get_weight2(i.first, i.second, L1, bi, B)>limweight) {
             keys[i.first] = i.second;
         }
     }
@@ -585,9 +588,12 @@ std::string compress_block(std::string text, size_t block_size) {
     std::unordered_set<std::string> keys_set(keys_stack.begin(), keys_stack.end());
 //    std::vector<std::string> splitted=split_string_by_tokens(text, keys_stack);
 //    std::vector<std::string> new_splitted;
+    size_t last_pos=0;
     std::vector<std::string> splitted = {text, }, new_splitted;
     for(auto& key: keys_stack) {
-        for(auto& str: splitted) {
+//        for(auto& str: splitted) {
+        for(auto it=splitted.begin()+last_pos; it!=splitted.end(); it++) {
+            auto str = (*it);
             if(!str.empty() && !keys_set.count(str)) {
                 //std::cout<<"div\t"<<str<<std::endl;
                 auto div = split_string_by_token(str, key);
@@ -599,8 +605,15 @@ std::string compress_block(std::string text, size_t block_size) {
                 new_splitted.push_back(str);
             }
         }
-        splitted = new_splitted;
+//        splitted = new_splitted;
+        splitted.swap(new_splitted);
         new_splitted.clear();
+
+        while(keys_set.count(splitted[last_pos])) {
+            last_pos += 1;
+        }
+
+        new_splitted.insert(new_splitted.end(), splitted.begin(), splitted.begin()+last_pos);
     }
     /// clear empty vals
     splitted.erase(
@@ -696,8 +709,32 @@ std::string compress_block(std::string text, size_t block_size) {
     /// building markov chain
 //    Markov<std::vector<std::string>, std::string> markov(&splitted);
     Markov<std::vector<std::string>, std::string> markov(&new_splitted);
-    MarkovChain<std::string> text_markov_chain = markov.build_chain();
+//    MarkovChain<std::string> text_markov_chain = markov.build_chain(markov_order);
     //auto chain = markov.build_chain();
+
+    std::vector<MarkovChain<std::string>> markov_chains;
+    std::vector<size_t> markov_chains_sizes;
+    size_t model_size=0, min_model;
+    size_t min_model_size=0;
+//    size_t min_model_size=text.size();
+    markov_chains.reserve(markov_order);
+    for(auto i=1; i<=markov_order; i++) {
+        markov_chains.push_back(MarkovChain<std::string>(markov.build_chain(i)));
+        model_size = 0;
+        for(auto& j: markov_chains.back()) {
+            model_size += j.second.size();
+        }
+        if(model_size>min_model_size) {
+            min_model = markov_chains.size();
+            min_model_size = model_size;
+        }
+        std::cout<<"\n\tOrder: "<<i<<std::endl;
+        std::cout<<"\tSize: "<<model_size<<std::endl;
+    }
+
+    MarkovChain<std::string> text_markov_chain = markov_chains[min_model-1];
+    markov_order = min_model;
+    std::cout<<"\nMarkov model order: "<<markov_order<<std::endl;
 
     /// sorting keys in keys_tree by counts
     /// sorted_keys_tree - list of lists
@@ -791,9 +828,11 @@ std::string compress_block(std::string text, size_t block_size) {
     std::vector<size_t> encoded;
     size_t code, max_code=0;
     Counts<size_t> stat;
-    for(auto it=splitted.begin()+1; it!=splitted.end()-1; it++) {
+//    for(auto it=splitted.begin()+1; it!=splitted.end()-1; it++) {
+    for(auto it=splitted.begin(); it!=splitted.end()-markov_order; it++) {
         key1 = *it;
-        key2 = *(it+1);
+//        key2 = *(it+1);
+        key2 = *(it+markov_order);
 
         code = std::find(sorted_keys_tree[key1].begin(), sorted_keys_tree[key1].end(), key2) - sorted_keys_tree[key1].begin() + 1;
 //        code = std::distance(std::find(sorted_keys_tree[key1].begin(), sorted_keys_tree[key1].end(), key2), sorted_keys_tree[key1].begin());
@@ -938,9 +977,9 @@ std::string compress_block(std::string text, size_t block_size) {
     std::cout<<"\nBzip2.compress(text).size(): "<<Bzip2::compress(text).size();
     std::cout<<"\nGzip.compress(text).size(): "<<Gzip::compress(text).size()<<std::endl;
 
-//    std::cout<<"\n\nPress any key to compress uncompressed"<<std::endl;
-//    std::cin>>n;
-//    compress_block(non_compressed_text, block_size);
+    std::cout<<"\n\nPress any key to compress uncompressed"<<std::endl;
+    std::cin>>n;
+    compress_block(non_compressed_text, block_size, markov_order);
 
     return res;
 }

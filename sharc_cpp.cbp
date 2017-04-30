@@ -20,11 +20,14 @@
 					<Add option="-lboost_iostreams" />
 					<Add option="-fprofile-arcs" />
 					<Add option="-ftest-coverage" />
+					<Add option="-lgcov" />
 					<Add option="-DBUILD_WITH_EASY_PROFILER" />
-					<Add directory="/home/egor/usr/include" />
 				</Compiler>
 				<Linker>
 					<Add option="-pg" />
+					<Add option="-lgcov" />
+					<Add option="--coverage" />
+					<Add option="-lboost_iostreams" />
 					<Add directory="/home/egor/usr/lib/" />
 				</Linker>
 			</Target>
@@ -54,13 +57,20 @@
 			<Add option="-fexceptions" />
 			<Add option="-lboost_iostreams" />
 			<Add option="-fopenmp" />
+			<Add option="-lz" />
+			<Add option="-lbz2" />
 			<Add option="-DBUILD_WITH_EASY_PROFILER" />
+			<Add directory="/home/egor/usr/include" />
 		</Compiler>
 		<Linker>
+			<Add option="-O2" />
 			<Add option="-pg" />
 			<Add option="-static" />
-			<Add library="/usr/lib/libboost_iostreams.so.1.49.0" />
+			<Add option="-lboost_iostreams" />
+			<Add option="-lz" />
+			<Add option="-lbz2" />
 			<Add directory="/home/egor/usr/lib/" />
+			<Add directory="/usr/lib/x86_64-linux-gnu" />
 		</Linker>
 		<Unit filename="argparse.hpp" />
 		<Unit filename="base64.cpp" />

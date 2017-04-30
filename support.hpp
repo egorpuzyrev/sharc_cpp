@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <list>
 
+std::string repeat_string(const std::string &word, int times);
+
 size_t countSubstring(const std::string& str, const std::string& sub);
 
 std::vector<std::string> split(const std::string& s, const std::string& delim);

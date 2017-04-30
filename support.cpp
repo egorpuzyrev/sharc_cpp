@@ -12,6 +12,13 @@
 #include "support.hpp"
 
 //#include <easy/profiler.h>
+std::string repeat_string(const std::string &word, int times ) {
+   std::string result;
+   result.reserve(times*word.length()); // avoid repeated reallocation
+   for ( int a = 0; a < times; a++ )
+      result += word;
+   return result;
+}
 
 size_t countSubstring(const std::string& str, const std::string& sub) {
 //    EASY_FUNCTION(0xfff080aa);
@@ -83,7 +90,9 @@ std::vector<std::string> split(const std::string& s, const std::string& delimite
 	size_t l = delimiter.length();
 	while ((pos = s.find(delimiter, pos0)) != std::string::npos) {
 	    token = s.substr(pos0, pos-pos0);
-	    res.push_back(token);
+	    if(!token.empty()) {
+            res.push_back(token);
+	    }
 	    // std::cout << token << std::endl;
 	    pos0 = pos+l;
 	    //s.erase(0, pos + l);
