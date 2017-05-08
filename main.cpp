@@ -42,7 +42,7 @@ int main() {
 
 //    std::string text = SampleString;
 //    std::string text = base64_encode(SampleString.substr(0, 128*1024));
-    std::string text = SampleString.substr(0, 20*1024);
+    std::string text = SampleString.substr(0, 32*1024);
 //    std::string text = "karl_u_klari_ukral_koralli_a_klara_u_karla_ukrala_klarnet";
     //std::string text = "aaaasaaaaasaaaaasaaaaas";
     //std::string text = "aaaasaaaaasa";
@@ -80,7 +80,7 @@ int main() {
     std::cout<<"Counter: "<<c<<std::endl;
 
 //    EASY_BLOCK("Compress block");
-    compress_block(text, 32, 20);
+    compress_block(text, 16, 20);
     std::cout<<"\nBzip2.compress(text).size(): "<<Bzip2::compress(text).size();
     std::cout<<"\nGzip.compress(text).size(): "<<Gzip::compress(text).size()<<std::endl;
     //EASY_END_BLOCK;

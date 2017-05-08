@@ -10,7 +10,7 @@
 #include "support.hpp"
 #include "lcp.hpp"
 #include "rabinkarp.hpp"
-
+#include "ahocorasik.hpp"
 //#include <easy/profiler.h>
 
 Counts<std::string> get_keys_naive(const std::string& text, size_t factor, size_t min_len, size_t max_len) {
@@ -68,22 +68,24 @@ Counts<std::string> get_keys_naive_mod(const std::string& text, size_t factor, s
         sub = text.substr(pos, c);
         while(pos+c<=l && c<=max_len && keys_set.count(sub)) {
             c += 1;
-            sub += text[pos+c-1];
-//            sub = text.substr(pos, c);
+//            sub += text[pos+c-1];
+            sub = text.substr(pos, c);
         }
 
         keys_set.insert(sub);
 
-        while(pos+c<=l && c<=max_len) {
-            c += 1;
+//        while(pos+c<=l && c<=max_len) {
+//            c += 1;
 //            sub = text.substr(pos, c);
-            sub += text[pos+c-1];
-            keys_set.insert(sub);
-        }
+////            sub += text[pos+c-1];
+//            keys_set.insert(sub);
+//        }
     }
 
-    keys = multicount(text, keys_set);
+//    keys = multicount(text, keys_set);
+    keys = multicount_aho(text, keys_set);
 
+    std::cout<<"keys before filter: "<<keys.size()<<std::endl;
     for(auto it=keys.begin(); it!=keys.end(); ) {
         if((*it).second<=factor || (*it).first.length()<min_len) {
             it = keys.erase(it);
@@ -91,7 +93,7 @@ Counts<std::string> get_keys_naive_mod(const std::string& text, size_t factor, s
             ++it;
         }
     }
-
+    std::cout<<"keys after filter: "<<keys.size()<<std::endl;
 
     auto fun_finish = std::chrono::system_clock::now();
     auto fun_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(fun_finish - fun_start);
@@ -99,6 +101,159 @@ Counts<std::string> get_keys_naive_mod(const std::string& text, size_t factor, s
 
     return keys;
 }
+
+
+//Counts<std::string> get_keys_by_lcp(const std::string& text, size_t factor, size_t min_len, size_t max_len, size_t block_size) {
+////    EASY_FUNCTION();
+//    auto start = std::chrono::system_clock::now();
+//    auto fun_start = std::chrono::system_clock::now();
+//    auto finish = std::chrono::system_clock::now();
+//    auto fun_finish = std::chrono::system_clock::now();
+//    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
+//    auto fun_elapsed = elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
+//
+//    size_t L = text.length(), l, cnt;
+////    size_t step = (size_t)block_size;
+//    //size_t step = (size_t)block_size-min_len;
+////    size_t step = (size_t)block_size/2-min_len;
+//    size_t step = (size_t)1;
+//    std::vector<std::string> blocks;
+//    std::set<std::string> blocks_set;
+//
+//    start = std::chrono::system_clock::now();
+//    for(size_t i=0; i<L; i+=step) {
+//        blocks.push_back(text.substr(i, block_size));
+//    }
+//    finish = std::chrono::system_clock::now();
+//    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
+//    std::cout<<"Split by blocks: "<< elapsed.count() << std::endl;
+//
+//    std::vector<std::pair<std::string, size_t>> suffixes, suffs;
+//
+//    start = std::chrono::system_clock::now();
+//    for(size_t i=0; i<blocks.size(); i++) {
+//        suffs = get_suffixes(blocks[i]);
+//        for(auto& j: suffs) {
+//            suffixes.push_back(std::make_pair(j.first, block_size*i+j.second));
+//        }
+//    }
+//    finish = std::chrono::system_clock::now();
+//    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
+//    std::cout<<"Getting suffixes: "<< elapsed.count() << std::endl;
+//
+//    start = std::chrono::system_clock::now();
+//    std::sort(suffixes.begin(), suffixes.end(), [](auto a, auto b){return a.first>b.first;});
+//    finish = std::chrono::system_clock::now();
+//    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
+//    std::cout<<"Sorting suffixes: "<< elapsed.count() << std::endl;
+//
+//    start = std::chrono::system_clock::now();
+//    std::vector<size_t> lcps = get_lcp_naive(suffixes);
+//    finish = std::chrono::system_clock::now();
+//    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
+//    std::cout<<"get_lcp: "<< elapsed.count() << std::endl;
+//
+//
+//    std::vector<std::string> common_prefixes;
+//
+//    start = std::chrono::system_clock::now();
+//    for(size_t i=0; i<lcps.size(); i++) {
+//        if(lcps[i]>0) {
+//            common_prefixes.push_back(suffixes[i].first.substr(0, lcps[i]));
+//        }
+//    }
+//    finish = std::chrono::system_clock::now();
+//    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
+//    std::cout<<"getting common prefixes: "<< elapsed.count() << std::endl;
+//
+//
+//    std::unordered_set<std::string> keys_set;
+//    Counts<std::string> keys;
+//    std::string sub;
+//
+//    //std::vector<size_t> prekmp = prefix_function(text);
+//
+//    start = std::chrono::system_clock::now();
+//    for(auto& prefix: common_prefixes) {
+//        l = prefix.length();
+//        size_t lim = std::min(l, max_len);
+//        //#pragma omp parallel for
+//        for(size_t i=min_len; i<=lim; i++) {
+//            sub = prefix.substr(0, i);
+//
+//            //keys[sub] = 0;
+////            keys_set.emplace(sub);
+//            keys_set.insert(sub);
+////            if(!keys_set.count(sub)) {
+////                keys_set.emplace(sub);
+////                cnt = countSubstring(text, sub);
+////                //std::cout<<"Sub: "<<sub<<"\t"<<cnt<<std::endl;
+////                //cnt = KMP_count(text, sub);
+////                //cnt = preKMP_count(prekmp, text, sub);
+////                if(cnt>factor) {
+////                    keys[sub] = cnt;
+////
+////                } else {
+////                    break;
+////                }
+////            }
+//        }
+//    }
+//    finish = std::chrono::system_clock::now();
+//    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
+//    std::cout<<"zeroing keys: "<< elapsed.count() << std::endl;
+//
+//    start = std::chrono::system_clock::now();
+////    for(auto& key: keys_set) {
+////        sub = key;
+//////        if(key.second==0) {
+////            cnt = countSubstring(text, sub);
+//////            if(cnt>factor) {
+////                keys[sub] = cnt;
+//////            } else {
+//////                break;
+//////            }
+//////        }
+////    }
+//    //keys = multicount(text, keys_set.begin(), keys_set.end());
+//    keys = multicount(text, keys_set);
+//    finish = std::chrono::system_clock::now();
+//    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
+//    std::cout<<"counting keys: "<< elapsed.count() << std::endl;
+//
+//    std::cout<<"Size before filtering: "<<keys.size()<<std::endl;
+//    start = std::chrono::system_clock::now();
+//    //for(auto it=keys.begin(); it!=keys.end(); it++) {
+//    auto it=keys.begin();
+//    while(it!=keys.end()) {
+//        if((*it).second<=factor || (*it).first.length()<min_len || (*it).first.length()>max_len) {
+//            //keys.erase(it++);
+//            it = keys.erase(it);
+//        } else {
+//            ++it;
+//        }
+//    }
+//    finish = std::chrono::system_clock::now();
+//    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
+//    std::cout<<"Size after filtering: "<<keys.size()<<std::endl;
+//    std::cout<<"filtering keys: "<< elapsed.count() << std::endl;
+//
+//    fun_finish = std::chrono::system_clock::now();
+//    fun_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(fun_finish - fun_start);
+//    std::cout<<"get_keys_by_lcp: "<< fun_elapsed.count() << std::endl;
+//
+//    return keys;
+//}
+
+
+
+
+
+
+
+
+
+
 
 
 Counts<std::string> get_keys_by_lcp(const std::string& text, size_t factor, size_t min_len, size_t max_len, size_t block_size) {
@@ -120,117 +275,80 @@ Counts<std::string> get_keys_by_lcp(const std::string& text, size_t factor, size
 
     start = std::chrono::system_clock::now();
     for(size_t i=0; i<L; i+=step) {
-        blocks.push_back(text.substr(i, block_size));
+        blocks_set.insert(text.substr(i, block_size));
     }
     finish = std::chrono::system_clock::now();
     elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
     std::cout<<"Split by blocks: "<< elapsed.count() << std::endl;
 
-    std::vector<std::pair<std::string, size_t>> suffixes, suffs;
+//    std::vector<std::pair<std::string, size_t>> suffixes, suffs;
+    std::vector<std::string> suffs;
 
     start = std::chrono::system_clock::now();
     for(size_t i=0; i<blocks.size(); i++) {
-        suffs = get_suffixes(blocks[i]);
-        for(auto& j: suffs) {
-            suffixes.push_back(std::make_pair(j.first, block_size*i+j.second));
-        }
+        suffs = get_prefixes_str(blocks[i]);
+        blocks_set.insert(suffs.begin(), suffs.end());
+
+//        suffs = get_suffixes_str(blocks[i]);
+//        blocks_set.insert(suffs.begin(), suffs.end());
     }
+
     finish = std::chrono::system_clock::now();
     elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
     std::cout<<"Getting suffixes: "<< elapsed.count() << std::endl;
 
-    start = std::chrono::system_clock::now();
-    std::sort(suffixes.begin(), suffixes.end(), [](auto a, auto b){return a.first>b.first;});
-    finish = std::chrono::system_clock::now();
-    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
-    std::cout<<"Sorting suffixes: "<< elapsed.count() << std::endl;
+    std::vector<std::string> suffixes(blocks_set.begin(), blocks_set.end());
+
 
     start = std::chrono::system_clock::now();
+
     std::vector<size_t> lcps = get_lcp_naive(suffixes);
+
     finish = std::chrono::system_clock::now();
     elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
     std::cout<<"get_lcp: "<< elapsed.count() << std::endl;
 
 
     std::vector<std::string> common_prefixes;
+    std::unordered_set<std::string> keys_set;
 
     start = std::chrono::system_clock::now();
     for(size_t i=0; i<lcps.size(); i++) {
-        if(lcps[i]>0) {
-            common_prefixes.push_back(suffixes[i].first.substr(0, lcps[i]));
+//        keys_set.insert(suffixes[i]);
+        for(size_t j=1; j<=lcps[i]; j++) {
+            keys_set.insert(suffixes[i].substr(0, j));
         }
+
     }
     finish = std::chrono::system_clock::now();
     elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
     std::cout<<"getting common prefixes: "<< elapsed.count() << std::endl;
 
 
-    std::unordered_set<std::string> keys_set;
-    Counts<std::string> keys;
-    std::string sub;
-
-    //std::vector<size_t> prekmp = prefix_function(text);
-
     start = std::chrono::system_clock::now();
-    for(auto& prefix: common_prefixes) {
-        l = prefix.length();
-        size_t lim = std::min(l, max_len);
-        //#pragma omp parallel for
-        for(size_t i=min_len; i<=lim; i++) {
-            sub = prefix.substr(0, i);
 
-            //keys[sub] = 0;
-//            keys_set.emplace(sub);
-            keys_set.insert(sub);
-//            if(!keys_set.count(sub)) {
-//                keys_set.emplace(sub);
-//                cnt = countSubstring(text, sub);
-//                //std::cout<<"Sub: "<<sub<<"\t"<<cnt<<std::endl;
-//                //cnt = KMP_count(text, sub);
-//                //cnt = preKMP_count(prekmp, text, sub);
-//                if(cnt>factor) {
-//                    keys[sub] = cnt;
-//
-//                } else {
-//                    break;
-//                }
-//            }
-        }
-    }
-    finish = std::chrono::system_clock::now();
-    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
-    std::cout<<"zeroing keys: "<< elapsed.count() << std::endl;
+    std::cout<<"keys_set.size(): "<< keys_set.size() << std::endl;
+//    Counts<std::string> keys = multicount(text, keys_set);
+    Counts<std::string> keys = multicount_aho(text, keys_set);
 
-    start = std::chrono::system_clock::now();
-//    for(auto& key: keys_set) {
-//        sub = key;
-////        if(key.second==0) {
-//            cnt = countSubstring(text, sub);
-////            if(cnt>factor) {
-//                keys[sub] = cnt;
-////            } else {
-////                break;
-////            }
-////        }
-//    }
-    //keys = multicount(text, keys_set.begin(), keys_set.end());
-    keys = multicount(text, keys_set);
     finish = std::chrono::system_clock::now();
     elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
     std::cout<<"counting keys: "<< elapsed.count() << std::endl;
 
+
     std::cout<<"Size before filtering: "<<keys.size()<<std::endl;
     start = std::chrono::system_clock::now();
-    //for(auto it=keys.begin(); it!=keys.end(); it++) {
-    auto it=keys.begin();
-    while(it!=keys.end()) {
-        if((*it).second<=factor || (*it).first.length()<min_len || (*it).first.length()>max_len) {
+
+    for(auto it=keys.begin(); it!=keys.end(); ) {
+//        if((*it).second<=factor || (*it).first.length()<min_len || (*it).first.length()>max_len) {
+        if((*it).second<=factor || (*it).first.length()<min_len) {
             //keys.erase(it++);
             it = keys.erase(it);
         } else {
             ++it;
         }
     }
+
     finish = std::chrono::system_clock::now();
     elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
     std::cout<<"Size after filtering: "<<keys.size()<<std::endl;

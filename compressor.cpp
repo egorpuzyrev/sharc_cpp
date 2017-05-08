@@ -22,6 +22,10 @@
 #include "string_compressors.hpp"
 #include "base64.hpp"
 
+#include "bwt.hpp"
+
+#include "ahocorasik.hpp"
+
 //#include <easy/profiler.h>
 
 const size_t ALPHA_LIMIT=2;
@@ -51,7 +55,21 @@ std::string compress_block(std::string text, size_t block_size, size_t markov_or
 //    EASY_BLOCK("Get keys block");
 //    Counts<std::string> keys_copy = get_keys_by_lcp(text, 1, 2, 2, 1);
     Counts<std::string> keys_copy = get_keys_by_lcp(text, 1, 2, block_size, block_size);
-//    Counts<std::string> keys_copy = get_keys_naive_mod(text, 1, 2, block_size);
+//    Counts<std::string> keys_copy1 = get_keys_naive_mod(text, 1, 2, block_size);
+
+//    std::cout<<"Compare keys:"<<std::endl;
+//    for(auto& i: keys_copy1) {
+//        if(!keys_copy.count(i.first) || keys_copy[i.first]!= i.second) {
+//            std::cout<<"<"<<i.first<<">\t"<<i.second<<"\t"<<keys_copy[i.first]<<"\t"<<countSubstring(text, i.first)<<i.first.size()<<std::endl;
+//        }
+//    }
+
+//    for(auto& i: keys_copy) {
+//        if(!keys_copy1.count(i.first) || keys_copy1[i.first]!= i.second) {
+//            std::cout<<"<"<<i.first<<">\t"<<i.second<<"\t"<<keys_copy1[i.first]<<"\t"<<countSubstring(text, i.first)<<std::endl;
+//        }
+//    }
+
 //    Counts<std::string> keys_copy = get_keys_naive(text, 1, 2, block_size);
     std::unordered_map<std::string, size_t> keys_intersections(keys_copy.begin(), keys_copy.end());
     Counts<std::string> keys;
@@ -173,6 +191,7 @@ std::string compress_block(std::string text, size_t block_size, size_t markov_or
 //            std::cout<<">>>pop: "<<std::endl;
             independent_key_found = false;
             while(!independent_key_found && !sorted_by_weights.empty()) {
+//            while(!sorted_by_weights.empty()) {
 //                std::cout<<"0 ";
                 key2 = sorted_by_weights.back().first;
                 sorted_by_weights.pop_back();
@@ -245,7 +264,8 @@ std::string compress_block(std::string text, size_t block_size, size_t markov_or
 //            EASY_BLOCK("Counting intersections...");
 //            std::cout<<"Counting intersections (multicount)"<<std::endl;
 //            int more_than_1=0,more_than_0=0,maximal_len=0;
-            to_substract = multicount(text, to_count);
+//            to_substract = multicount(text, to_count);
+            to_substract = multicount_aho(text, to_count);
 //            for(auto& i: to_substract) {
 //                if(i.second>1) {
 //                    more_than_1 += 1;
@@ -830,7 +850,10 @@ std::string compress_block(std::string text, size_t block_size, size_t markov_or
     std::vector<size_t> encoded;
     size_t code, max_code=0;
     Counts<size_t> stat;
-    std::cout<<"\n\nencoded: ";
+    HuffmanEncoder<size_t> huff;
+
+    size_t total=0;
+
 //    for(auto it=splitted.begin()+1; it!=splitted.end()-1; it++) {
     for(auto it=splitted.begin(); it!=splitted.end()-markov_order; it++) {
         key1 = *it;
@@ -840,55 +863,107 @@ std::string compress_block(std::string text, size_t block_size, size_t markov_or
         code = std::find(sorted_keys_tree[key1].begin(), sorted_keys_tree[key1].end(), key2) - sorted_keys_tree[key1].begin() + 1;
 //        code = std::distance(std::find(sorted_keys_tree[key1].begin(), sorted_keys_tree[key1].end(), key2), sorted_keys_tree[key1].begin());
         encoded.push_back(code);
-        std::cout<<" "<<code;
 //        stat[code] += 1;
         max_code = std::max(code, max_code);
     }
 
-    ///RLE
-    std::vector<size_t> rled;
-    rled.reserve(encoded.size());
-    size_t cur_code=encoded[0], run_len=0;
-    for(auto it=encoded.begin(); it!=encoded.end(); it++) {
-        if((*it)==cur_code) {
-            run_len += 1;
-        } else {
-            rled.push_back(run_len);
-            rled.push_back(cur_code);
 
-            stat[run_len] += 1;
-            stat[cur_code] += 1;
-
-            run_len = 1;
-            cur_code = (*it);
-        }
+    std::cout<<"\n\n\n>>>>>>>>encoded.size(): "<<encoded.size()<<std::endl;
+    std::cout<<"\n\nencoded: ";
+    for(auto& i: encoded) {
+        std::cout<<" "<<i;
+        stat[i]+=1;
     }
 
-//    std::cout<<"\t\tencoded.size\thuff_tree\tkeys tree\t"<<std::endl;
-    std::cout<<"\n\n\n>>>>>>>>encoded: "<<encoded.size()<<std::endl;
-    std::cout<<"\n\n\n>>>>>>>>rled: "<<rled.size()<<std::endl;
-
-    HuffmanEncoder<size_t> huff;
     huff.InitFrequencies(stat);
     huff.Encode();
-    auto huff_tree = huff.outCodes;
-
-    size_t total=0;
-    std::cout<<"huff.outCodes: ";
+    total = 0;
     for(auto& i: huff.outCodes) {
-        std::cout<<"\t"<<i.first<<"-"<<i.second.size(); //<<std::endl;
+        total += i.second.size()*stat[i.first];
     }
-//    std::cout<<"total:\t"<<sum1;
-//    std::cout<<"total:\t";
-//    total += sum1;
-//    sum=0;
+    std::cout<<"\nencoded huffman: "<<total/8<<std::endl;
 
+    auto huff_tree = huff.outCodes;
     size_t encoded_text_size = 0;
 //    for(auto& i: rled) {
     for(auto& i: encoded) {
 //        sum += huff_tree[i].size();
         encoded_text_size += huff_tree[i].size();
     }
+
+    stat.clear();
+
+    ///RLE
+//    std::vector<size_t> rled;
+//    rled.reserve(encoded.size());
+//    size_t cur_code=encoded[0], run_len=0;
+//    for(auto it=encoded.begin(); it!=encoded.end(); it++) {
+//        if((*it)==cur_code) {
+//            run_len += 1;
+//        } else {
+//            rled.push_back(run_len);
+//            rled.push_back(cur_code);
+//
+//            stat[run_len] += 1;
+//            stat[cur_code] += 1;
+//
+//            run_len = 1;
+//            cur_code = (*it);
+//        }
+//    }
+
+    std::vector<size_t> bwted(encoded.begin(), encoded.end());
+//    bwted.insert(bwted.end(), encoded.begin(), encoded.end());
+    auto bwt_key = townsend::algorithm::bwtEncode(bwted.begin(), bwted.end());
+
+    std::cout<<"\n\n\n>>>>>>>>bwted.size(): "<<bwted.size()<<std::endl;
+    std::cout<<"\nBWT(encoded):";
+    for(auto& i: bwted) {
+        std::cout<<" "<<i;
+        stat[i] += 1;
+    }
+
+    huff.InitFrequencies(stat);
+    huff.Encode();
+    total = 0;
+    for(auto& i: huff.outCodes) {
+        total += i.second.size()*stat[i.first];
+    }
+    std::cout<<"\nBWT(encoded) huffman: "<<total/8<<std::endl;
+    stat.clear();
+
+
+//    std::cout<<"\t\tencoded.size\thuff_tree\tkeys tree\t"<<std::endl;
+
+
+//    auto rled = rlencode(bwted);
+//    auto rled = rlencode_mod(bwted);
+    size_t max_elem = *std::max_element(bwted.begin(), bwted.end());
+    auto rled = rlencode_mod12(bwted, max_elem+1, max_elem+2);
+    std::cout<<"\n\n\n>>>>>>>>rled.size(): "<<rled.size()<<std::endl;
+    std::cout<<"\nRLE(bwted): ";
+    for(auto& i: rled) {
+        std::cout<<" "<<i;
+        stat[i]+=1;
+    }
+
+    huff.InitFrequencies(stat);
+    huff.Encode();
+    total = 0;
+    for(auto& i: huff.outCodes) {
+        total += i.second.size()*stat[i.first];
+    }
+    std::cout<<"\nRLE(bwted) huffman: "<<total/8<<std::endl;
+    stat.clear();
+//    std::cout<<"\n\nhuff.outCodes: ";
+//    for(auto& i: huff.outCodes) {
+//        std::cout<<"\t"<<i.first<<"-"<<i.second.size(); //<<std::endl;
+//    }
+//    std::cout<<"total:\t"<<sum1;
+//    std::cout<<"total:\t";
+//    total += sum1;
+//    sum=0;
+
 //    std::cout<<"\t"<<sum/8;
 //    total += sum/8;
     ///sum - размер закодированного текста
@@ -977,9 +1052,10 @@ std::string compress_block(std::string text, size_t block_size, size_t markov_or
 
 //    auto mtfed = mtf(ordered_keys, splitted);
     auto mtfed = mtf(stat_vec, encoded);
+//    auto mtfed = mtf_deferred(stat_vec, encoded);
 //    auto mtfed = mtf(stat_vec, rled);
     Counts<size_t> mtf_counts;
-    std::cout<<"\nMTF: "<<std::endl;
+//    std::cout<<"\nMTF(encoded): "<<std::endl;
     for(auto& i: mtfed) {
         //std::cout<<"\t"<<i;
         mtf_counts[i] += 1;
@@ -996,6 +1072,7 @@ std::string compress_block(std::string text, size_t block_size, size_t markov_or
         sum6 += i.second.size();
     }
 
+    std::cout<<"mtfed.size(): "<<mtfed.size()<<std::endl;
     std::cout<<"sum5: "<<sum5/8<<std::endl;
     std::cout<<"sum6: "<<sum6/8<<std::endl;
     std::cout<<"sum5+6: "<<(sum5+sum6)/8<<std::endl;
@@ -1003,14 +1080,168 @@ std::string compress_block(std::string text, size_t block_size, size_t markov_or
     std::cout<<"\nBzip2.compress(text).size(): "<<Bzip2::compress(text).size();
     std::cout<<"\nGzip.compress(text).size(): "<<Gzip::compress(text).size()<<std::endl;
 
-    std::cout<<"\n\nMTF(encoded): ";
+
+    std::cout<<"\n\n\n>>>>>>>>mtfed.size(): "<<mtfed.size()<<std::endl;
+    std::cout<<"\nMTF(encoded): ";
     for(auto& i: mtfed) {
         std::cout<<" "<<i;
+        stat[i]+=1;
     }
+
+    huff.InitFrequencies(stat);
+    huff.Encode();
+    total = 0;
+    for(auto& i: huff.outCodes) {
+        total += i.second.size()*stat[i.first];
+    }
+    std::cout<<"\nMTF(encoded) huffman: "<<total/8<<std::endl;
+    stat.clear();
+
+//    std::vector<size_t> rled_mtfed = rlencode(mtfed);
+//    std::vector<size_t> rled_mtfed = rlencode_mod(mtfed);
+    max_elem = *std::max_element(mtfed.begin(), mtfed.end());
+    std::vector<size_t> rled_mtfed = rlencode_mod12(mtfed, max_elem+1, max_elem+2);
+    std::cout<<"\n\n\n>>>>>>>>rled_mtfed.size(): "<<rled_mtfed.size()<<std::endl;
+    std::cout<<"\nRLE(mtfed): ";
+    for(auto& i: rled_mtfed) {
+        std::cout<<" "<<i;
+        stat[i]+=1;
+    }
+
+    huff.InitFrequencies(stat);
+    huff.Encode();
+    total = 0;
+    for(auto& i: huff.outCodes) {
+        total += i.second.size()*stat[i.first];
+    }
+    std::cout<<"\nRLE(mtfed) huffman: "<<total/8<<std::endl;
+    stat.clear();
+
+    std::vector<size_t> mtfed_bwt = mtf(stat_vec, bwted);
+//    std::vector<size_t> mtfed_bwt = mtf_deferred(stat_vec, bwted);
+    std::cout<<"\n\n\n>>>>>>>>mtfed_bwt.size(): "<<mtfed_bwt.size()<<std::endl;
+    std::cout<<"\nMTF(bwted): ";
+    for(auto& i: mtfed_bwt) {
+        std::cout<<" "<<i;
+        stat[i]+=1;
+    }
+
+    huff.InitFrequencies(stat);
+    huff.Encode();
+    total = 0;
+    for(auto& i: huff.outCodes) {
+        total += i.second.size()*stat[i.first];
+    }
+    std::cout<<"\nMTF(bwted) huffman: "<<total/8<<std::endl;
+    stat.clear();
+
+//    std::vector<size_t> rled_mtfed_bwt = rlencode(mtfed_bwt);
+//    std::vector<size_t> rled_mtfed_bwt = rlencode_mod(mtfed_bwt);
+    max_elem = *std::max_element(mtfed_bwt.begin(), mtfed_bwt.end());
+    std::vector<size_t> rled_mtfed_bwt = rlencode_mod12(mtfed_bwt, max_elem+1, max_elem+2);
+    std::cout<<"\n\n\n>>>>>>>>rled_mtfed_bwt.size(): "<<rled_mtfed_bwt.size()<<std::endl;
+    std::cout<<"\nRLE(mtfed_bwt): ";
+    for(auto& i: rled_mtfed_bwt) {
+        std::cout<<" "<<i;
+        stat[i]+=1;
+    }
+
+    huff.InitFrequencies(stat);
+    huff.Encode();
+    total = 0;
+    for(auto& i: huff.outCodes) {
+        total += i.second.size()*stat[i.first];
+    }
+    std::cout<<"\nRLE(mtfed_bwt) huffman: "<<total/8<<std::endl;
+    stat.clear();
+
+    std::vector<size_t> bwted_mtfed_bwt(mtfed_bwt.begin(), mtfed_bwt.end());
+//    bwted_mtfed_bwt.reserve(mtfed_bwt.size());
+//    bwted_mtfed_bwt.insert(bwted_mtfed_bwt.end(), mtfed_bwt.begin(), mtfed_bwt.end());
+    auto bwted_mtfed_bwt_key = townsend::algorithm::bwtEncode(bwted_mtfed_bwt.begin(), bwted_mtfed_bwt.end());
+//    bwt_key = townsend::algorithm::bwtEncode(bwted.begin(), bwted.end());
+    std::cout<<"\n\n\n>>>>>>>>bwted_mtfed_bwt.size(): "<<bwted_mtfed_bwt.size()<<std::endl;
+    std::cout<<"\nBWT(mtfed_bwt): ";
+    for(auto& i: bwted_mtfed_bwt) {
+        std::cout<<" "<<i;
+        stat[i]+=1;
+    }
+
+    huff.InitFrequencies(stat);
+    huff.Encode();
+    total = 0;
+    for(auto& i: huff.outCodes) {
+        total += i.second.size()*stat[i.first];
+    }
+    std::cout<<"\nBWT(mtfed_bwt) huffman: "<<total/8<<std::endl;
+    stat.clear();
+
+//    std::vector<size_t> rled_bwted_mtfed_bwt = rlencode(bwted_mtfed_bwt);
+//    std::vector<size_t> rled_bwted_mtfed_bwt = rlencode_mod(bwted_mtfed_bwt);
+    max_elem = *std::max_element(bwted_mtfed_bwt.begin(), bwted_mtfed_bwt.end());
+    std::vector<size_t> rled_bwted_mtfed_bwt = rlencode_mod12(bwted_mtfed_bwt, max_elem+1, max_elem+2);
+    std::cout<<"\n\n\n>>>>>>>>rled_bwted_mtfed_bwt.size(): "<<rled_bwted_mtfed_bwt.size()<<std::endl;
+    std::cout<<"\nRLE(bwted_mtfed_bwt): ";
+    for(auto& i: rled_bwted_mtfed_bwt) {
+        std::cout<<" "<<i;
+        stat[i]+=1;
+    }
+
+    huff.InitFrequencies(stat);
+    huff.Encode();
+    total = 0;
+    for(auto& i: huff.outCodes) {
+        total += i.second.size()*stat[i.first];
+    }
+    std::cout<<"\nRLE(bwted_mtfed_bwt) huffman: "<<total/8<<std::endl;
+    stat.clear();
 
 //    std::cout<<"\n\nPress any key to compress uncompressed"<<std::endl;
 //    std::cin>>n;
 //    compress_block(non_compressed_text, block_size, markov_order);
+
+    std::set<size_t> set1(bwted.begin(), bwted.end());
+    std::vector<size_t> alpha(set1.begin(), set1.end());
+    std::vector<size_t> dc_bwt = mtf(bwted, alpha);
+//    std::vector<size_t> mtfed_bwt = mtf_deferred(stat_vec, bwted);
+    std::cout<<"\n\n\n>>>>>>>>dc_bwt.size(): "<<dc_bwt.size()<<std::endl;
+    std::cout<<"\nDC(bwted): ";
+    for(auto& i: dc_bwt) {
+        std::cout<<" "<<i;
+        stat[i]+=1;
+    }
+
+    huff.InitFrequencies(stat);
+    huff.Encode();
+    total = 0;
+    for(auto& i: huff.outCodes) {
+        total += i.second.size()*stat[i.first];
+    }
+    std::cout<<"\nDC(bwted) huffman: "<<total/8<<std::endl;
+    stat.clear();
+
+
+    set1.clear();
+    set1.insert(encoded.begin(), encoded.end());
+    alpha.clear();
+    alpha.insert(alpha.end(), set1.begin(), set1.end());
+    dc_bwt = mtf(encoded, alpha);
+    std::cout<<"\n\n\n>>>>>>>>dc_bwt.size(): "<<dc_bwt.size()<<std::endl;
+    std::cout<<"\nDC(encoded): ";
+    for(auto& i: dc_bwt) {
+        std::cout<<" "<<i;
+        stat[i]+=1;
+    }
+
+    huff.InitFrequencies(stat);
+    huff.Encode();
+    total = 0;
+    for(auto& i: huff.outCodes) {
+        total += i.second.size()*stat[i.first];
+    }
+    std::cout<<"\nDC(encoded) huffman: "<<total/8<<std::endl;
+    stat.clear();
+
 
     return res;
 }

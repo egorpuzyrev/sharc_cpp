@@ -3,11 +3,13 @@
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/dynamic_bitset.hpp>
 #include <chrono>
 #include <iostream>
 #include <algorithm>
 #include <unordered_set>
 #include <functional>
+#include <cmath>
 
 #include "support.hpp"
 
@@ -217,18 +219,29 @@ std::vector<std::string> get_keys_intersections_wh(std::string key1, std::string
 //    #pragma omp parallel for
     for(size_t i=1; i<l1; i++) {
 //        std::cout<<"1 ";
-        sub = key1.substr(0, i);
+        //sub = key1.substr(0, i);
+        sub += key1[i-1];
+        sub2 = key2[l2-i] + sub2;
         //if(boost::algorithm::ends_with(key2, sub)) {
-        if(str_hash(key2.substr(l2-i, i))==str_hash(sub) && key2.substr(l2-i, i)==sub) {
+//        if(str_hash(key2.substr(l2-i, i))==str_hash(sub) && key2.substr(l2-i, i)==sub) {
+//        if(str_hash(sub2)==str_hash(sub) && sub2==sub) {
+        if(str_hash(sub2)==str_hash(sub)) {
             intersections.push_back(key2+key1.substr(i, l1));
         }
     }
+
+    sub = "";
+    sub2 = "";
 //    #pragma omp parallel for
     for(size_t i=1; i<l1; i++) {
 //        std::cout<<"2 ";
-        sub = key1.substr(l1-i, i);
+        //sub = key1.substr(l1-i, i);
+        sub = key1[l1-i] + sub;
+        sub2 += key2[i-1];
         //if(boost::algorithm::starts_with(key2, sub)) {
-        if(str_hash(key2.substr(0, i))==str_hash(sub) && key2.substr(0, i)==sub) {
+//        if(str_hash(key2.substr(0, i))==str_hash(sub) && key2.substr(0, i)==sub) {
+//        if(str_hash(sub2)==str_hash(sub) && sub2==sub) {
+        if(str_hash(sub2)==str_hash(sub)) {
             intersections.push_back(key1.substr(0, l1-i)+key2);
         }
     }
@@ -344,4 +357,89 @@ std::string dump_bits(const std::vector<bool>& bitvector) {
     }
 
     return ret;
+}
+
+
+//std::vector<size_t> onetwo_encoder(size_t num, size_t z1, size_t z2) {
+//	size_t bin[2] = {z1, z2};
+//	std::vector<size_t> res;
+//	res.reserve(ceil(log2(num)));
+//
+//	boost::dynamic_bitset<> bset(ceil(log2(num)), num);
+//	for(auto i=0; i<bset.size(); i++) {
+//		res.push_back(bin[bset[i]]);
+//	}
+//
+//	return res;
+//}
+
+
+std::vector<size_t> onetwo_encoder(size_t num, size_t z1, size_t z2) {
+	std::vector<size_t> res;
+
+	while(num>0) {
+		if(num & 1) {
+			res.push_back(z1);
+			num -= 1;
+		} else {
+			res.push_back(z2);
+			num -= 2;
+		}
+		num >>= 1;
+	}
+
+	return res;
+}
+
+
+std::vector<size_t> dc_encode(std::vector<size_t> text, std::vector<size_t> alpha) {
+
+	const size_t al = alpha.size();
+	const size_t tl = text.size();
+
+	std::vector<size_t> res, vec(tl+1, 0);
+
+	//vec.reserve(text);
+
+	///alpha
+	size_t dist, index, zero_count;
+	for(auto i=0; i<al; i++) {
+		auto it = std::find(text.begin(), text.end(), alpha[i]);
+		index = it - text.begin();
+		dist = index;
+
+		//if(dist!=0) {
+			zero_count = std::count_if(vec.begin(), vec.begin()+dist, [](auto a){return a==0;});
+			res.push_back(zero_count);
+			std::cout<<alpha[i]<<"\t"<<dist<<"\t"<<zero_count<<std::endl;
+		//}
+		vec[index] = alpha[i];
+	}
+
+
+	for(auto i=0; i<tl; i++) {
+		//auto start =
+		auto it = std::find(std::min(text.begin()+i+1, text.end()), text.end(), vec[i]);
+		index = it - text.begin();
+		dist = index - i;
+
+		//std::cout<<"dist: "<<dist<<std::endl;
+
+		if(dist!=1) {
+			zero_count = std::count_if(vec.begin()+i, vec.begin()+index, [](auto a){return a==0;});
+			res.push_back(zero_count);
+		}
+
+		vec[index] = vec[i];
+
+		//if(dist==1) {
+			//std::cout<<"dist==1"<<std::endl;
+			//continue;
+		//}
+
+
+	}
+
+
+	return res;
 }

@@ -17,8 +17,30 @@ std::vector<std::pair<std::string, size_t>> get_suffixes(const std::string &s) {
 std::vector<std::pair<std::string, size_t>> get_prefixes(const std::string &s) {
     std::vector<std::pair<std::string, size_t>> res;
     const size_t l = s.length();
-    for(size_t i=0; i<l; i++) {
+    for(size_t i=0; i<=l; i++) {
         res.push_back(std::make_pair(s.substr(0, i), i));
+    }
+    return res;
+}
+
+
+
+std::vector<std::string> get_suffixes_str(const std::string &s) {
+    std::vector<std::string> res;
+    res.reserve(s.size());
+    const size_t l = s.length();
+    for(size_t i=0; i<l; i++) {
+        res.push_back(s.substr(i, l));
+    }
+    return res;
+}
+
+std::vector<std::string> get_prefixes_str(const std::string &s) {
+    std::vector<std::string> res;
+    res.reserve(s.size());
+    const size_t l = s.length();
+    for(size_t i=1; i<=l; i++) {
+        res.push_back(s.substr(0, i));
     }
     return res;
 }
@@ -33,11 +55,24 @@ size_t get_common_prefix_naive(const std::string& s1, const std::string& s2) {
     return c;
 }
 
+
+
 std::vector<size_t> get_lcp_naive(const std::vector<std::pair<std::string, size_t>> &sorted_suffixes) {
     size_t l = sorted_suffixes.size();
     std::vector<size_t> lcp(l, 0);
     for(size_t i=0; i<l-1; i++) {
         lcp[i] = get_common_prefix_naive(sorted_suffixes[i].first, sorted_suffixes[i+1].first);
+    }
+    return lcp;
+}
+
+std::vector<size_t> get_lcp_naive(const std::vector<std::string>& sorted_suffixes) {
+    size_t l = sorted_suffixes.size();
+    std::vector<size_t> lcp;
+    lcp.reserve(sorted_suffixes.size());
+//    for(size_t i=0; i<l-1; i++) {
+    for(auto it=sorted_suffixes.begin(); it!=sorted_suffixes.end()-1; it++) {
+        lcp.push_back(get_common_prefix_naive(*(it), *(it+1)));
     }
     return lcp;
 }
