@@ -47,6 +47,11 @@ class AhoCorasick
 //Counts<size_t> multicount_aho(std::string s);
 Counts<std::string> multicount_aho(std::string text, const std::unordered_set<std::string>& hashes_set);
 
-
+//std::pair<Counts<std::string>, std::map<std::string, std::set<size_t>>> multipos_aho(std::string text, const std::unordered_set<std::string>& hashes_set);
+std::tuple< Counts<std::string>,
+            std::map<std::string, std::set<size_t>>,
+            std::vector<size_t>
+            >
+    multipos_aho(std::string text, const std::unordered_set<std::string>& hashes_set);
 
 #endif // AHOCORASIK_HPP_INCLUDED

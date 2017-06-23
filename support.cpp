@@ -188,6 +188,7 @@ std::vector<std::string> get_keys_intersections(const std::string& key11, const 
 
 //std::vector<std::string> get_keys_intersections_wh(const std::string& key11, const std::string& key22) {
 std::vector<std::string> get_keys_intersections_wh(std::string key1, std::string key2) {
+//    auto start = std::chrono::system_clock::now();
 //    EASY_FUNCTION();
 //    std::string key1, key2;
 //    if(key11.size()>key22.size()) {
@@ -245,6 +246,11 @@ std::vector<std::string> get_keys_intersections_wh(std::string key1, std::string
             intersections.push_back(key1.substr(0, l1-i)+key2);
         }
     }
+
+//    auto finish = std::chrono::system_clock::now();
+//    auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(finish - start);
+//
+//    std::cout<<">>>get_keys_intersections_wh time: "<< elapsed.count() << std::endl;
 
     return intersections;
 }
@@ -410,16 +416,17 @@ std::vector<size_t> dc_encode(std::vector<size_t> text, std::vector<size_t> alph
 
 		//if(dist!=0) {
 			zero_count = std::count_if(vec.begin(), vec.begin()+dist, [](auto a){return a==0;});
-			res.push_back(zero_count);
-			std::cout<<alpha[i]<<"\t"<<dist<<"\t"<<zero_count<<std::endl;
+			res.push_back(zero_count+1);
+//			std::cout<<alpha[i]<<"\t"<<dist<<"\t"<<zero_count<<std::endl;
 		//}
 		vec[index] = alpha[i];
 	}
 
-
+    ///kast
 	for(auto i=0; i<tl; i++) {
 		//auto start =
 		auto it = std::find(std::min(text.begin()+i+1, text.end()), text.end(), vec[i]);
+		if(it!=text.end()) {
 		index = it - text.begin();
 		dist = index - i;
 
@@ -427,7 +434,7 @@ std::vector<size_t> dc_encode(std::vector<size_t> text, std::vector<size_t> alph
 
 		if(dist!=1) {
 			zero_count = std::count_if(vec.begin()+i, vec.begin()+index, [](auto a){return a==0;});
-			res.push_back(zero_count);
+			res.push_back(zero_count+1);
 		}
 
 		vec[index] = vec[i];
@@ -436,7 +443,9 @@ std::vector<size_t> dc_encode(std::vector<size_t> text, std::vector<size_t> alph
 			//std::cout<<"dist==1"<<std::endl;
 			//continue;
 		//}
-
+		} else {
+            res.push_back(0);
+		}
 
 	}
 

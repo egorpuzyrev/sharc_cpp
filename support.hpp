@@ -3,6 +3,8 @@
 
 #include <vector>
 #include <string>
+#include <set>
+#include <map>
 #include <algorithm>
 #include <list>
 #include <cmath>
@@ -49,10 +51,11 @@ std::vector<size_t> mtf(std::vector<DataType>& alphabet, std::vector<DataType>& 
 
     for(auto& i: text) {
         auto alphabet_pos = std::find(alpha.begin(), alpha.end(), i);
+        auto elem = *alphabet_pos;
         size_t index = distance(alpha.begin(), alphabet_pos);
         res.push_back(index);
 
-        alpha.push_front(*alphabet_pos);
+        alpha.push_front(elem);
         alpha.erase(alphabet_pos);
     }
 
@@ -324,6 +327,221 @@ std::vector<int64_t> delta_encode(const std::vector<DataType>& text) {
     }
 
     return encoded;
+}
+
+
+template <typename KeyType, typename DataType, typename Predicate>
+std::set<KeyType> filter_map_keys(const std::map<KeyType, DataType> &map1, Predicate &cond) {
+    std::set<KeyType> res;
+
+    for(auto& it=map1.begin(); it!=map1.end; it++) {
+        if(cond(it)) {
+            res.insert(it.first);
+        }
+    }
+    return res;
+}
+
+
+
+
+
+template <typename ForwardIterator, typename T>
+ ForwardIterator find_fge(ForwardIterator first, ForwardIterator last, const T& val) {
+//    std::cout<<"started find_fge"<<std::endl;
+    ForwardIterator it;
+    auto left = first;
+    auto right = last-1;
+    auto mid = first + (last-first)/2;
+
+    while(right-left>=0) {
+        mid = left + (right-left)/2;
+//        std::cout<<"<<<<<<<<<<<<<<<<<<<<<<<<<"<<std::endl;
+//        std::cout<<"right-left: "<<right-left<<std::endl;
+//        std::cout<<"right: "<<right-first<<std::endl;
+//        std::cout<<"left: "<<left-first<<std::endl;
+//        std::cout<<"mid: "<<mid-first<<std::endl;
+//        std::cout<<"values: "<<*(mid-1)<<"\t"<<*mid<<"\t"<<*(mid+1)<<std::endl;
+        if((*mid)<val) {
+//            std::cout<<"(*mid)<val: "<<((*mid)<val)<<std::endl;
+            left = mid + 1;
+        } else
+        if(val<=*(mid-1) && *(mid-1)<=*mid) {
+//            std::cout<<"val<=*(mid-1) && *(mid-1)<=*mid: "<< (val<=*(mid-1) && *(mid-1)<=*mid) <<std::endl;
+            right = mid;
+        } else
+        if( ( (mid-1)-first>=0 && *(mid-1)<val && val<=*mid) ||
+            ( (mid-1)-first<0 && val<=(*mid) ) ) {
+            return mid;
+        }
+//        std::cout<<"(mid-1)-first>=0 "<< ((mid-1)-first>=0) <<std::endl;
+//        std::cout<<"*(mid-1)<val "<< (*(mid-1)<val) <<std::endl;
+//        std::cout<<"val<=*mid "<< (val<=*mid) <<std::endl;
+//        std::cout<<"(mid-1)-first<0 "<< ((mid-1)-first<0) <<std::endl;
+//        std::cout<<"val<=(*mid) "<< (val<=(*mid)) <<std::endl;
+//        std::cout<<" "<<  <<std::endl;
+//        std::cout<<" "<<  <<std::endl;
+    }
+    return last;
+}
+
+
+template <typename ForwardIterator, typename T>
+size_t find_longest_streak(ForwardIterator first, ForwardIterator last, const T& val) {
+//    std::cout<<"started find_longest_streak"<<std::endl;
+    auto dist = std::distance(first, last);
+    if(dist<=1) {
+        return dist;
+    }
+//    if(last-first<=1) {
+//        return last-first;
+//    }
+
+    size_t cur_len = 0;
+    ForwardIterator next_pos = first;
+
+    while(next_pos!=last) {
+        cur_len += 1;
+        next_pos = find_fge(next_pos, last, (*next_pos)+val);
+    }
+
+    return cur_len;
+}
+
+
+template <typename ForwardIterator, typename T>
+std::vector<size_t> find_longest_streak_vector(ForwardIterator first, ForwardIterator last, const T& val) {
+//    std::cout<<"started find_longest_streak"<<std::endl;
+
+//    auto dist = std::distance(first, last);
+    auto dist = last - first;
+    if(dist<=1) {
+        return std::vector<size_t>(first, last);
+    }
+
+    std::vector<size_t> res;
+    res.reserve(dist/2);
+//    if(last-first<=1) {
+//        return last-first;
+//    }
+
+    size_t cur_len = 0;
+    ForwardIterator next_pos = first;
+
+    while(next_pos!=last) {
+//        cur_len += 1;
+        res.push_back(next_pos-first);
+        next_pos = find_fge(next_pos, last, (*next_pos)+val);
+    }
+
+    return res;
+}
+
+
+
+//template <typename ForwardIterator, typename T>
+template <typename ForwardIterator>
+std::vector<ForwardIterator> find_minimals(ForwardIterator first, ForwardIterator last) {
+//    std::cout<<"started find_minimals"<<std::endl;
+    std::vector<ForwardIterator> res;
+    if(last-first<=1) {
+        if(last-first==1) {
+            res.push_back(first);
+        }
+        return res;
+    }
+
+    if (*first<*(first+1)) {
+        res.push_back(first);
+    }
+
+    for(auto it=first+1; it!=last-1; it++) {
+        if((*it<*(it-1) && *it<=*(it+1)) || (*it<=*(it-1) && *it<*(it+1))) {
+            res.push_back(it);
+        }
+    }
+
+    if(*(last-1)<*(last-2)) {
+        res.push_back((last-1));
+    }
+
+    return res;
+}
+
+
+template <typename ForwardIterator>
+ForwardIterator find_peak(ForwardIterator first, ForwardIterator last) {
+//    std::cout<<"started find_peak"<<std::endl;
+    if(last-first==2) {
+        if(*first<*(first+1)) {
+            return first+1;
+        } else {
+            return first;
+        }
+    } else
+    if(last-first==1) {
+        return first;
+    } else
+    if(last-first==0) {
+        return last;
+    }
+
+    ForwardIterator it;
+    while(1) {
+        it = first + (last-first)/2;
+        if(*it<*(it-1)) {
+            last = it;
+        } else
+        if(*it<*(it+1)) {
+            first = it+1;
+        } else {
+            return it;
+        }
+    }
+}
+
+
+template <typename ForwardIterator>
+std::vector<ForwardIterator> find_peaks(ForwardIterator first, ForwardIterator last) {
+//    std::cout<<"started find_peaks"<<std::endl;
+    auto minimals = find_minimals(first, last);
+
+    std::vector<ForwardIterator> res;
+    res.reserve(minimals.size());
+
+    if(last-first==1 || !minimals.size()) {
+        res.push_back(first);
+        return res;
+    }
+
+//    std::cout<<">>>>minimals:"<<std::endl;
+//    for(auto& i: minimals) {
+//        std::cout<<i-first<<" ";
+//    }
+//    std::cout<<std::endl;
+
+
+//    std::cout<<"find_peaks 1"<<std::endl;
+    if(last-first==1 || (last-first>1 && *first>*(first+1))) {
+//        std::cout<<"first added"<<std::endl;
+        res.push_back(first);
+    }
+
+//    std::cout<<"find_peaks 2"<<std::endl;
+    //for(auto& it=minimals.begin(); it!=(minimals.end()-1); it++) {
+
+    for(auto i=0; i<minimals.size()-1; i++) {
+        res.push_back(find_peak(minimals[i], minimals[i+1]));
+    }
+
+//    std::cout<<"find_peaks 3"<<std::endl;
+    if(last-first>1 && *(last-1)>*(last-2)) {
+//        std::cout<<"last added"<<std::endl;
+        res.push_back(last-1);
+    }
+//    std::cout<<"find_peaks 4"<<std::endl;
+
+    return res;
 }
 
 

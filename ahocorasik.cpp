@@ -8,6 +8,8 @@
 #include <chrono>
 #include <unordered_set>
 #include <set>
+#include <map>
+#include <tuple>
 
 #include "ahocorasik.hpp"
 #include "global.hpp"
@@ -256,3 +258,96 @@ Counts<std::string> multicount_aho(std::string text, const std::unordered_set<st
 
     return counts;
 }
+
+
+
+//std::pair<Counts<std::string>, std::map<std::string, std::set<size_t>>> multipos_aho(std::string text, const std::unordered_set<std::string>& hashes_set) {
+//std::tuple< Counts<std::string>,
+//            std::map<std::string, std::set<size_t>>,
+//            std::vector<size_t>
+//            >
+//    multipos_aho(std::string text, const std::unordered_set<std::string>& hashes_set) {
+//
+//
+//    auto start = std::chrono::system_clock::now();
+//
+//    std::vector<std::string> p(hashes_set.begin(), hashes_set.end());
+//
+//    size_t l=text.length();
+//    std::vector<size_t> max_keys_lens(p.size(), 0);
+//    std::map<std::string, std::set<size_t>> positions;
+//    Counts<std::string> counts;
+//    std::map<std::string, int> prev_pos;
+//
+//
+//    for(auto it=p.begin(); it!=p.end(); it++) {
+//        counts[(*it)] = 0;
+//        positions[(*it)] = std::set<size_t>();
+//        prev_pos[(*it)] = -(*it).length()-1;
+//    }
+//
+//
+//    Node *trie;
+//
+//    trie = new Node;
+//
+//    for(int i = 0; i < p.size(); i++)
+//    {   insert(trie, p[i], i);
+//    }
+//
+//    std::queue<Node *> q;
+//    for(int i = 0; i < 256; i++)
+//    {   if(trie->next[i])
+//        {   trie->next[i]->suff = trie;
+//            q.push(trie->next[i]);
+//        }
+//        else
+//        {   trie->next[i] = trie;
+//        }
+//    }
+//
+//    while(q.empty() == 0)
+//    {   Node *x = q.front(); q.pop();
+//        for(int i = 0; i < x->out.size(); i++)
+//        {   Node *y = x->next[x->out[i]];
+//            y->suff = suffix(x->suff, x->out[i]);
+//            y->pats.insert(y->pats.end(), y->suff->pats.begin(), y->suff->pats.end());
+//            q.push(y);
+//        }
+//    }
+//
+//
+//    std::string sub;
+//    Node *x = trie;
+//    int cnt = 0;
+//    for(int i = 0; i < text.size(); i++) {
+//        x = suffix(x, text[i]);
+//        for(auto& j: x->pats) {
+//            //res[j] += 1;
+//            //counts[p[j]] += 1;
+//            sub = p[j];
+//            if(i-prev_pos[sub]>=sub.size()) {
+//                prev_pos[sub] = i;
+//                positions[sub].insert(i);
+//                max_keys_lens[i] = std::max(max_lens[i], sub.size());
+//                counts[sub] += 1;
+////                    std::cout<<"\t<"<<sub<<">\t"<<counts[sub]<<std::endl;
+//            }
+//        }
+//    }
+//
+////    auto clean_start = std::chrono::system_clock::now();
+//    freenode(trie, trie);
+//    delete trie;
+//
+//
+//    auto finish = std::chrono::system_clock::now();
+////    auto clean_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - clean_start);
+//    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
+//
+////    std::cout<<">>>clean time: "<< clean_elapsed.count() << std::endl;
+//    std::cout<<">>>AhoCorasik multipos time: "<< elapsed.count() << std::endl;
+//
+////    return std::make_pair(counts, positions);
+//    return std::make_tuple(counts, positions, max_keys_lens);
+//}

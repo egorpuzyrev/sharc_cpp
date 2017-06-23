@@ -1,3 +1,4 @@
+#include <iostream>
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -58,10 +59,18 @@ size_t get_common_prefix_naive(const std::string& s1, const std::string& s2) {
 
 
 std::vector<size_t> get_lcp_naive(const std::vector<std::pair<std::string, size_t>> &sorted_suffixes) {
+//    std::cout<<"started get_lcp_naive"<<std::endl;
     size_t l = sorted_suffixes.size();
-    std::vector<size_t> lcp(l, 0);
-    for(size_t i=0; i<l-1; i++) {
-        lcp[i] = get_common_prefix_naive(sorted_suffixes[i].first, sorted_suffixes[i+1].first);
+    std::vector<size_t> lcp;//(l, 0);
+//    std::cout<<"l = "<<l<<std::endl;
+//    for(size_t i=0; i<l-1; i++) {
+//        lcp[i] = get_common_prefix_naive(sorted_suffixes[i].first, sorted_suffixes[i+1].first);
+//    }
+//    std::cout<<"get_lcp_naive 1"<<std::endl;
+    lcp.reserve(sorted_suffixes.size());
+//    std::cout<<"get_lcp_naive 2"<<std::endl;
+    for(auto it=sorted_suffixes.begin(); it!=sorted_suffixes.end()-1; it++) {
+        lcp.push_back(get_common_prefix_naive((*it).first, (*(it+1)).first));
     }
     return lcp;
 }
