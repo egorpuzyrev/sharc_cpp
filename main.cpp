@@ -30,6 +30,8 @@ int main() {
 //    EASY_PROFILER_ENABLE;
     //EASY_MAIN_THREAD;
 //    profiler::startListen();
+//    std::string SampleString = "karl_u_klari_ukral_koralli";
+//    std::string SampleString = "karl_u_klari_ukral_koralli_a_klara_u_karla_ukrala_klarnet";
     //std::string SampleString = repeat("karl_u_klari_ukral_koralli_a_klara_u_karla_ukrala_klarnet", 1000);
 //    std::ifstream f("/home/egor/Tanuki1.webm");
     std::ifstream f("/home/egor/Build/argparse.tar");
@@ -42,26 +44,45 @@ int main() {
 
 //    std::string text = SampleString;
 //    std::string text = base64_encode(SampleString.substr(0, 128*1024));
-    std::string text = SampleString.substr(0, 32*1024);
+    std::string text = SampleString.substr(0, 512*1024);
 //    std::string text = "karl_u_klari_ukral_koralli_a_klara_u_karla_ukrala_klarnet";
     //std::string text = "aaaasaaaaasaaaaasaaaaas";
     //std::string text = "aaaasaaaaasa";
     //std::string text = base64_encode(SampleString.substr(0, 64*1024));
     std::cout<<"Text size: "<<text.size()<<std::endl;
 
+    std::cout<<"\n\n";
     auto start = std::chrono::system_clock::now();
-//    auto keys_naive = get_keys_naive(text, 2, 2, 32);
+//    auto keys_naive = get_keys_naive(text, 1, 1, 32);
     auto finish = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
-    std::cout << "Get keys naive: " << elapsed.count() << std::endl;
+    std::cout << "Get keys naive time: " << elapsed.count() << std::endl;
 //    std::cout << "keys_naive size: " << keys_naive.size() << std::endl << std::endl;
 
-//    start = std::chrono::system_clock::now();
-//    auto keys_lcp = get_keys_by_lcp(text, 2, 2, 32, 32);
-//    finish = std::chrono::system_clock::now();
-//    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
-//    std::cout << "Get keys lcp: " << elapsed.count() << std::endl;
-//    std::cout << "keys_lcp size: " << keys_lcp.size() << std::endl << std::endl;
+    std::cout<<"\n\n";
+    start = std::chrono::system_clock::now();
+    auto keys_lcp = get_keys_by_lcp(text, 1, 1, 32, 32);
+    finish = std::chrono::system_clock::now();
+    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
+    std::cout << "Get keys by lcp time: " << elapsed.count() << std::endl;
+    std::cout << "keys_lcp size: " << keys_lcp.size() << std::endl << std::endl;    std::cout<<"\n\n";
+
+
+    start = std::chrono::system_clock::now();
+    auto keys_positions_lcp = get_keys_positions_by_lcp(text, 1, 1, 32, 32);
+    finish = std::chrono::system_clock::now();
+    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
+    std::cout << "Get keys positions by lcp time: " << elapsed.count() << std::endl;
+    std::cout << "keys_positions_lcp size: " << keys_positions_lcp.size() << std::endl << std::endl;
+
+    std::cout<<"\n\n";
+    start = std::chrono::system_clock::now();
+    auto keys_lcp_old = get_keys_by_lcp_old(text, 1, 1, 32, 32);
+    finish = std::chrono::system_clock::now();
+    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
+    std::cout << "get_keys_by_lcp_old time: " << elapsed.count() << std::endl;
+    std::cout << "keys_lcp_old size: " << keys_lcp_old.size() << std::endl << std::endl;
+
 
     size_t c=0, a;
 //    std::cin>>a;
@@ -77,10 +98,10 @@ int main() {
 ////            std::cout<<i.first<<"\t"<<i.second<<"\t"<<countSubstring(text, i.first)<<std::endl;
 ////        }
 //    }
-    std::cout<<"Counter: "<<c<<std::endl;
+//    std::cout<<"Counter: "<<c<<std::endl;
 
 //    EASY_BLOCK("Compress block");
-    compress_block(text, 16, 20);
+//    compress_block(text, 2, 1);
     std::cout<<"\nBzip2.compress(text).size(): "<<Bzip2::compress(text).size();
     std::cout<<"\nGzip.compress(text).size(): "<<Gzip::compress(text).size()<<std::endl;
     //EASY_END_BLOCK;
