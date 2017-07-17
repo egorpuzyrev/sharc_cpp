@@ -26,7 +26,7 @@ std::string repeat( const std::string &word, int times ) {
    return result ;
 }
 
-int main() {
+int main(int argc, char **argv) {
 //    EASY_PROFILER_ENABLE;
     //EASY_MAIN_THREAD;
 //    profiler::startListen();
@@ -34,8 +34,8 @@ int main() {
 //    std::string SampleString = "karl_u_klari_ukral_koralli_a_klara_u_karla_ukrala_klarnet";
     //std::string SampleString = repeat("karl_u_klari_ukral_koralli_a_klara_u_karla_ukrala_klarnet", 1000);
 //    std::ifstream f("/home/egor/Tanuki1.webm");
-    std::ifstream f("/home/egor/Build/argparse.tar");
-//    std::ifstream f("/home/egor/Загрузки/condoyle.txt");
+//    std::ifstream f("/home/egor/Build/argparse.tar");
+    std::ifstream f("/home/egor/Загрузки/condoyle.txt");
 //    std::ifstream f("/home/egor/Загрузки/my_audios.html");
     //std::ifstream f("/home/egor/Programs/py/vm_book1.txt");
 
@@ -44,7 +44,7 @@ int main() {
 
 //    std::string text = SampleString;
 //    std::string text = base64_encode(SampleString.substr(0, 128*1024));
-    std::string text = SampleString.substr(0, 512*1024);
+    std::string text = SampleString.substr(0, 32*1024);
 //    std::string text = "karl_u_klari_ukral_koralli_a_klara_u_karla_ukrala_klarnet";
     //std::string text = "aaaasaaaaasaaaaasaaaaas";
     //std::string text = "aaaasaaaaasa";
@@ -59,29 +59,30 @@ int main() {
     std::cout << "Get keys naive time: " << elapsed.count() << std::endl;
 //    std::cout << "keys_naive size: " << keys_naive.size() << std::endl << std::endl;
 
-    std::cout<<"\n\n";
-    start = std::chrono::system_clock::now();
-    auto keys_lcp = get_keys_by_lcp(text, 1, 1, 32, 32);
-    finish = std::chrono::system_clock::now();
-    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
-    std::cout << "Get keys by lcp time: " << elapsed.count() << std::endl;
-    std::cout << "keys_lcp size: " << keys_lcp.size() << std::endl << std::endl;    std::cout<<"\n\n";
+//    std::cout<<"\n\n";
+//    start = std::chrono::system_clock::now();
+//    auto keys_lcp = get_keys_by_lcp(text, 1, 1, 32, 32);
+//    finish = std::chrono::system_clock::now();
+//    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
+//    std::cout << "Get keys by lcp time: " << elapsed.count() << std::endl;
+//    std::cout << "keys_lcp size: " << keys_lcp.size() << std::endl << std::endl;    std::cout<<"\n\n";
+//
+//
+//    start = std::chrono::system_clock::now();
+//    auto keys_positions_lcp = get_keys_positions_by_lcp(text, 1, 1, 32, 32);
+//    finish = std::chrono::system_clock::now();
+//    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
+//    std::cout << "Get keys positions by lcp time: " << elapsed.count() << std::endl;
+//    std::cout << "keys_positions_lcp size: " << keys_positions_lcp.size() << std::endl << std::endl;
 
 
-    start = std::chrono::system_clock::now();
-    auto keys_positions_lcp = get_keys_positions_by_lcp(text, 1, 1, 32, 32);
-    finish = std::chrono::system_clock::now();
-    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
-    std::cout << "Get keys positions by lcp time: " << elapsed.count() << std::endl;
-    std::cout << "keys_positions_lcp size: " << keys_positions_lcp.size() << std::endl << std::endl;
-
-    std::cout<<"\n\n";
-    start = std::chrono::system_clock::now();
-    auto keys_lcp_old = get_keys_by_lcp_old(text, 1, 1, 32, 32);
-    finish = std::chrono::system_clock::now();
-    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
-    std::cout << "get_keys_by_lcp_old time: " << elapsed.count() << std::endl;
-    std::cout << "keys_lcp_old size: " << keys_lcp_old.size() << std::endl << std::endl;
+//    std::cout<<"\n\n";
+//    start = std::chrono::system_clock::now();
+//    auto keys_lcp_old = get_keys_by_lcp_old(text, 1, 1, 32, 32);
+//    finish = std::chrono::system_clock::now();
+//    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
+//    std::cout << "get_keys_by_lcp_old time: " << elapsed.count() << std::endl;
+//    std::cout << "keys_lcp_old size: " << keys_lcp_old.size() << std::endl << std::endl;
 
 
     size_t c=0, a;
@@ -101,7 +102,7 @@ int main() {
 //    std::cout<<"Counter: "<<c<<std::endl;
 
 //    EASY_BLOCK("Compress block");
-//    compress_block(text, 2, 1);
+    compress_block(text, 32, 1);
     std::cout<<"\nBzip2.compress(text).size(): "<<Bzip2::compress(text).size();
     std::cout<<"\nGzip.compress(text).size(): "<<Gzip::compress(text).size()<<std::endl;
     //EASY_END_BLOCK;

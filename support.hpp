@@ -410,16 +410,17 @@ size_t find_longest_streak(ForwardIterator first, ForwardIterator last, const T&
 
 
 template <typename ForwardIterator, typename T>
-std::vector<size_t> find_longest_streak_vector(ForwardIterator first, ForwardIterator last, const T& val) {
+std::vector<ForwardIterator> find_longest_streak_vector(ForwardIterator first, ForwardIterator last, const T& val) {
 //    std::cout<<"started find_longest_streak"<<std::endl;
 
 //    auto dist = std::distance(first, last);
+    std::vector<ForwardIterator> res;
     auto dist = last - first;
     if(dist<=1) {
-        return std::vector<size_t>(first, last);
+        res.push_back(first);
+        return res;
     }
 
-    std::vector<size_t> res;
     res.reserve(dist/2);
 //    if(last-first<=1) {
 //        return last-first;
@@ -430,7 +431,30 @@ std::vector<size_t> find_longest_streak_vector(ForwardIterator first, ForwardIte
 
     while(next_pos!=last) {
 //        cur_len += 1;
-        res.push_back(next_pos-first);
+        res.push_back(next_pos);
+        next_pos = find_fge(next_pos, last, (*next_pos)+val);
+    }
+
+    return res;
+}
+
+template <typename ForwardIterator, typename T>
+std::vector<size_t> find_longest_streak_values(ForwardIterator first, ForwardIterator last, const T& val) {
+
+    std::vector<size_t> res;
+    auto dist = last - first;
+    if(dist<=1) {
+        res.push_back(dist);
+        return res;
+    }
+
+    res.reserve(dist/2);
+
+    size_t cur_len = 0;
+    ForwardIterator next_pos = first;
+
+    while(next_pos!=last) {
+        res.push_back(*next_pos);
         next_pos = find_fge(next_pos, last, (*next_pos)+val);
     }
 
