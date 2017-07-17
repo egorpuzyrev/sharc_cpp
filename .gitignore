@@ -6,3 +6,9 @@ obj/
 *.prof
 .cccc/*
 .cccc/
+*.o
+*.a
+*.so
+*.out
+*.bak*
+*.old*
