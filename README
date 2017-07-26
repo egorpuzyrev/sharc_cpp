@@ -1,0 +1,13 @@
+Attempt to invent and implement compression algorithm.
+At this stage algorithm is:
+
+1) Split input text (byte sequence) into blocks; then for block:
+2) Find all byte sequences (substrings, named keys) with length>=L (2 by default), repeated 2 or more times; put them in some set
+3) Calculate relative weight (custom function) of each key; choose one with maximal weight (maxkey); pop maxkey from set and put in some maxkeys_queue
+4) Find all occurences of key with maximal weight and their positions in text; recalculate counts of keys, intersected with maxkey on that positions
+5) If some keys left in set, goto 3
+
+6) Split text into keys from maxkeys_queue and non-keys text -> array of byte sequences (splitted)
+7) Analyze array with Markov chain; save result as array/map of sorted arrays (transitions_table): the first element in sorted array - the most possible element, following after current
+8) Start encoding: replace next element in splitted with their index in transitions_table[prev element] -> encoded; after encoding there will be a lot of 1's, a bit less 2's and so on
+9) Encode encoded with Huffman coding; BWT/MTF/DC/etc optionally.
